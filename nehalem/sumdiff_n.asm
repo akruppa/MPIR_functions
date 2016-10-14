@@ -20,7 +20,7 @@
 
 BITS 64
 
-global  sumdiff_n:function
+global  sumdiff_n:function (sumdiff_n.end - sumdiff_n)
 
 segment .text
 
@@ -344,3 +344,4 @@ sumdiff_n:
   %endif
 
     ret
+.end:
