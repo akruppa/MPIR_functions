@@ -1,96 +1,31 @@
-; =============================================================================
-; Elementary Arithmetic Assembler Routines
-; for Intel Architectures Westmere, Nehalem, Sandy Bridge and Ivy Bridge
-;
-; (c) Jens Nurmann - 2014-2016
-;
-; A general note on the use of cache prefetching. Several routines contain
-; cache prefetching - typically those where I have unrolled loops by 8 as the
-; data size then is 64 bytes <=> one cache line. The prefetching degrades the
-; performance on small (<1,000 limb) sized operands a bit (<2%) but it
-; increases performance on large (>1,000 limb) sized operands substantially
-; (>10%). The prefetch stride is set to 256 on Nehalem generally.
-;
-; I implemented cache prefetching because I measured a significant speed boost
-; also in the recursive routines like Toom-Cook 33 - even though speed on the
-; small scale operands is reduced.
-;
-; If you feel unsure about cache prefetching you can disable it by commenting
-; out the define for perfetching (USE_PREFETCH). You should do also if you
-; know in advance that your application will only work with small sized
-; operands.
-;
-; What I haven't implemented so far is an adaptive prefetching mechanism -
-; meaning the size of the prefetch stride adapts to the size of the input
-; operands.
-;
-; A general note on the use of LAHF / SAHF. Several routines use this scheme
-; to propagate a carry through a loop. Whereever I left this in place I
-; benched it successfully against schemes like SBB reg, reg / ADD reg, reg
-; ----------------------------------------------------------------------------
-; History:
-;
-; Date       Author Version Action
-; ---------- ------ ------- --------------------------------------------------
-; 26.03.2016 jn     0.00.01 generated excerpt for MPIR containing
-;                           - sumdiff_n
-;                           - addlsh1_n
-;                           - sublsh1_n
-;                           - rsh1add_n
-;                           - rsh1sub_n
-;
-; Comment:
-; Considering the following (optimal?) Toom-33 pseude-code from Marco Bodrato
-; I would have expected requirement for lsh1add_n / rsh1sub_n / sublsh1_n (and
-; potentially rsh1add_n if emulating sign operations). lsh1add_n seems to be
-; missing from your choice!?
-;
-;   // W0 = U0 + U2; W4 = V0 + V2
-;   // W3 = W0 - U1; W2 = W4 - V1
-;   // W0 = W0 + U1; W4 = W4 + V1
-;   // W1 = W2 * W3; W2 = W0 * W4
-;   // W0 =(W0 + U2)<<1 - U0; W4 =(W4 + V2)<<1 - V0
-;   // W3 = W0 * W4; W0 = U0 * V0; W4 = U2 * V2
-;   // W3 =(W3 - W1)/3; W1 =(W2 - W1)>>1
-;   // W2 = W2 - W0
-;   // W3 =(W3 - W2)>>1 - W4<<1
-;   // W2 = W2 - W1
-;   // W3 = W4*x + W3*y
-;   // W1 = W2*x + W1*y
-;   // W1 = W1 - W3
-;   // W  = W3*x^3+ W1*x*y^2 + W0*y^4
 ; ============================================================================
-
-%define USE_LINUX64
-;%define USE_WIN64
-;%define USE_PREFETCH
-;%define PREFETCH_STRIDE 256
-
-global  rsh1sub_n:function
-
-; ============================================================================
-; rsh1sub_n( Op1, Op2: pLimb; const Size: tCounter; Op3: pLimb ):tBaseVal
-; Linux      RDI  RSI               RDX             RCX         :RAX
-; Win7       RCX  RDX               R8              R9          :RAX
+; rsh1add_n( Op1, Op2: pLimb; Size: tCounter; Op3: pLimb ):tBaseVal
+; Linux      RDI  RSI         RDX             RCX         :RAX
+; Win7       RCX  RDX         R8              R9          :RAX
 ;
 ; Description:
-; The function subtracts Op2 from Op1, shifts this right one bit, stores the
-; result in Op3 and hands back the total carry. Though in theory the carry is
-; absorbed by the shift right it is still signalled to the upper layer to
-; indicate an overflow has happened. There is a gain in execution speed
-; compared to separate shift and subtraction by interleaving the elementary
+; The function adds Op1 to Op2, shifts this right one bit, stores the result
+; in Op3 and hands back the total carry. There is a gain in execution speed
+; compared to separate shift and addition by interleaving the elementary
 ; operations and reducing memory access. The factor depends on the size of the
-; operands (in effect the cache hierarchy in which the operands can be handled).
+; operands (the cache hierarchy in which the operands can be handled).
 ;
 ; Caveats:
 ; - for asm the processor MUST support LAHF/SAHF in 64 bit mode!
 ;
 ; Comments:
 ; - asm version implemented, tested & benched on 16.05.2015 by jn
-; - On an i5 430M in asm per limb saving is 0.7 cycles in L1 and L2
+; - On Nehalem per limb saving is 0.7 cycles in LD1$, LD2$ and 1-2 in LD3$
 ; - includes LAHF / SAHF
 ; - includes prefetching
+; - includes XMM safe & restore
 ; ============================================================================
+
+BITS 64
+
+global  rsh1add_n:function (rsh1add_n.end - rsh1add_n)
+
+segment .text
 
 %ifdef USE_WIN64
 
@@ -153,7 +88,7 @@ global  rsh1sub_n:function
 %endif
 
     align   32
-shr1sub_n:
+rsh1add_n:
 
 %ifdef USE_WIN64
   %ifdef USE_PREFETCH
@@ -187,9 +122,9 @@ shr1sub_n:
     mov     EBP, PREFETCH_STRIDE    ; Attn: check if redefining Offs
   %endif
 
-    ; prepare shift & subtraction with loop-unrolling 8
+    ; prepare shift & addition with loop-unrolling 8
     mov     Limb0, [Op1]        ; pre-load first shift value
-    sub     Limb0, [Op2]
+    add     Limb0, [Op2]
     lahf                        ; memorize carry
 
     add     Op1, 8
@@ -197,12 +132,11 @@ shr1sub_n:
     sub     Size, 1
 
     test    Size, 1
-    je      .shr1sub_n_two
+    je      .rsh1add_n_two
 
-    sahf
     mov     Limb1, [Op1]
     mov     RAX, [Op2]
-    sbb     Limb1, RAX
+    adc     Limb1, RAX
     lahf
 
     shrd    Limb0, Limb1, 1
@@ -213,18 +147,18 @@ shr1sub_n:
     add     Op3, 8
     mov     Limb0, Limb1
 
-  .shr1sub_n_two:
+  .rsh1add_n_two:
 
     test    Size, 2
-    je      .shr1sub_n_four
+    je      .rsh1add_n_four
 
     sahf
     mov     Limb1, [Op1]
     mov     RAX, [Op2]
-    sbb     Limb1, RAX
+    adc     Limb1, RAX
     mov     Limb2, [Op1+8]
     mov     RAX, [Op2+8]
-    sbb     Limb2, RAX
+    adc     Limb2, RAX
     lahf
 
     shrd    Limb0, Limb1, 1
@@ -237,23 +171,24 @@ shr1sub_n:
     add     Op3, 16
     mov     Limb0, Limb2
 
-  .shr1sub_n_four:
+  .rsh1add_n_four:
 
     test    Size, 4
-    je      .shr1sub_n_test
+    je      .rsh1add_n_test
 
+    sahf
     mov     Limb1, [Op1]
     mov     RAX, [Op2]
-    sbb     Limb1, RAX
+    adc     Limb1, RAX
     mov     Limb2, [Op1+8]
     mov     RAX, [Op2+8]
-    sbb     Limb2, RAX
+    adc     Limb2, RAX
     mov     Limb3, [Op1+16]
     mov     RAX, [Op2+16]
-    sbb     Limb3, RAX
+    adc     Limb3, RAX
     mov     Limb4, [Op1+24]
     mov     RAX, [Op2+24]
-    sbb     Limb4, RAX
+    adc     Limb4, RAX
     lahf
 
     shrd    Limb0, Limb1, 1
@@ -269,14 +204,14 @@ shr1sub_n:
     add     Op2, 32
     add     Op3, 32
     mov     Limb0, Limb4
-    jmp     .shr1sub_n_test
+    jmp     .rsh1add_n_test
 
     ; main loop (prefetch enabled; unloaded cache)
     ; - 2.40-2.50 cycles per limb in L1D$
     ; - 2.6       cycles per limb in L2D$
     ; - 2.80-3.30 cycles per limb in L3D$
     align   16
-  .shr1sub_n_loop:
+  .rsh1add_n_loop:
 
   %ifdef USE_PREFETCH
     prefetchnta [Op1+Offs]
@@ -284,33 +219,33 @@ shr1sub_n:
   %endif
 
     sahf                        ; restore carry ...
-    mov     Limb1, [Op1]        ; prepare subtracted oct-limb from Op1, Op2
+    mov     Limb1, [Op1]        ; prepare added oct-limb from Op1, Op2
     mov     RAX, [Op2]
-    sbb     Limb1, RAX
+    adc     Limb1, RAX
     mov     Limb2, [Op1+8]
     mov     RAX, [Op2+8]
-    sbb     Limb2, RAX
+    adc     Limb2, RAX
     mov     Limb3, [Op1+16]
     mov     RAX, [Op2+16]
-    sbb     Limb3, RAX
+    adc     Limb3, RAX
     mov     Limb4, [Op1+24]
     mov     RAX, [Op2+24]
-    sbb     Limb4, RAX
+    adc     Limb4, RAX
     mov     Limb5, [Op1+32]
     mov     RAX, [Op2+32]
-    sbb     Limb5, RAX
+    adc     Limb5, RAX
     mov     Limb6, [Op1+40]
     mov     RAX, [Op2+40]
-    sbb     Limb6, RAX
+    adc     Limb6, RAX
     mov     Limb7, [Op1+48]
     mov     RAX, [Op2+48]
-    sbb     Limb7, RAX
+    adc     Limb7, RAX
     mov     Limb8, [Op1+56]
     mov     RAX, [Op2+56]
-    sbb     Limb8, RAX
+    adc     Limb8, RAX
     lahf                        ; ... and memorize carry again
 
-    shrd    Limb0, Limb1, 1     ; shift oct-limb and store in Op3
+    shrd    Limb0, Limb1, 1     ; shift oct-limbs and store in Op3
     mov     [Op3], Limb0
     shrd    Limb1, Limb2, 1
     mov     [Op3+8], Limb1
@@ -330,12 +265,12 @@ shr1sub_n:
     add     Op1, 64             ; adjust pointers
     add     Op2, 64
     add     Op3, 64
-    mov     Limb0, Limb8        ; set correct pre-load
+    mov     Limb0, R15          ; set correct pre-load
 
-  .shr1sub_n_test:
+  .rsh1add_n_test:
 
     sub     Size, 8
-    jnc     .shr1sub_n_loop
+    jnc     .rsh1add_n_loop
 
     ; housekeeping - set MSL and return the total carry
     shr     Limb0, 1
@@ -377,3 +312,4 @@ shr1sub_n:
 %endif
 
     ret
+end:
