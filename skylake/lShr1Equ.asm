@@ -145,13 +145,13 @@ lShr1Equ:
     vpsrlq    ShrQL0, QLimb0, 1
     vmovdqu   QLimb0, [Op1+32]
     vpsllq    ShlQL1, QLimb1, 63
-    vpblendd  ShlQL0, ShlQL0, ShlQL1, 0b00000011
-    vpermq    ShlQL0, ShlQL0, 0b00111001
+    vpblendd  ShlQL0, ShlQL0, ShlQL1, 00000011b
+    vpermq    ShlQL0, ShlQL0, 00111001b
     vpor      ShrQL0, ShrQL0, ShlQL0
     vpsrlq    ShrQL1, QLimb1, 1
     vpsllq    ShlQL0, QLimb0, 63
-    vpblendd  ShlQL1, ShlQL1, ShlQL0, 0b00000011
-    vpermq    ShlQL1, ShlQL1, 0b00111001
+    vpblendd  ShlQL1, ShlQL1, ShlQL0, 00000011b
+    vpermq    ShlQL1, ShlQL1, 00111001b
     vmovdqa   [Op2], ShrQL0
     vpor      ShrQL1, ShrQL1, ShlQL1
     vmovdqa   [Op2+32], ShrQL1
@@ -172,7 +172,7 @@ lShr1Equ:
     shl     Limb2, 63
     vpsrlq  ShrQL0, QLimb0, 1
     pinsrq  ShlDL0, Limb2, 0            ; SSE4.1
-    vpermq  ShlQL0, ShlQL0, 0b00111001
+    vpermq  ShlQL0, ShlQL0, 00111001b
     vpor    ShrQL0, ShrQL0, ShlQL0
     vmovdqa [Op2], ShrQL0
 

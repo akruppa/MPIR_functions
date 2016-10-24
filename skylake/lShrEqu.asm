@@ -151,13 +151,13 @@ lShrEqu:
     vpsrlvq   ShrQL0, QLimb0, ShrQLCnt
     vmovdqu   QLimb0, [Op1+32]
     vpsllvq   ShlQL1, QLimb1, ShlQLCnt
-    vpblendd  ShlQL0, ShlQL0, ShlQL1, 0b00000011
-    vpermq    ShlQL0, ShlQL0, 0b00111001
+    vpblendd  ShlQL0, ShlQL0, ShlQL1, 00000011b
+    vpermq    ShlQL0, ShlQL0, 00111001b
     vpor      ShrQL0, ShrQL0, ShlQL0
     vpsrlvq   ShrQL1, QLimb1, ShrQLCnt
     vpsllvq   ShlQL0, QLimb0, ShlQLCnt
-    vpblendd  ShlQL1, ShlQL1, ShlQL0, 0b00000011
-    vpermq    ShlQL1, ShlQL1, 0b00111001
+    vpblendd  ShlQL1, ShlQL1, ShlQL0, 00000011b
+    vpermq    ShlQL1, ShlQL1, 00111001b
     vmovdqa   [Op2], ShrQL0
     vpor      ShrQL1, ShrQL1, ShlQL1
     vmovdqa   [Op2+32], ShrQL1
@@ -178,7 +178,7 @@ lShrEqu:
     shrd    Limb2, Limb1, CL
     vpsrlvq ShrQL0, QLimb0, ShrQLCnt
     pinsrq  ShlDL0, Limb2, 0            ; SSE4.1
-    vpermq  ShlQL0, ShlQL0, 0b00111001
+    vpermq  ShlQL0, ShlQL0, 00111001b
     vpor    ShrQL0, ShrQL0, ShlQL0
     vmovdqa [Op2], ShrQL0
 

@@ -41,7 +41,7 @@ segment     .text
 
     %define Op1         RDI
     %define Size1       RSI
-    %define ShrIn       RDX
+    %define ShlIn       RDX
     %define Shift       RCX
     %define Op2         R8
     %define Limb1       R9
@@ -134,7 +134,7 @@ lShlEqu:
     ; pre-fetch first quad-limb
     vmovdqu QLimb0, [Op1-24]
     vpsrlvq ShrQL0, QLimb0, ShrQLCnt
-    vpermq  ShrQL0, ShrQL0, 0b10010011
+    vpermq  ShrQL0, ShrQL0, 10010011b
 
     sub     Op1, 32
     sub     Size1, 4
@@ -155,13 +155,13 @@ lShlEqu:
     vpsllvq   ShlQL0, QLimb0, ShlQLCnt
     vmovdqu   QLimb0, [Op1-56]
     vpsrlvq   ShrQL1, QLimb1, ShrQLCnt
-    vpermq    ShrQL1, ShrQL1, 0b10010011
-    vpblendd  ShrQL0, ShrQL0, ShrQL1, 0b00000011
+    vpermq    ShrQL1, ShrQL1, 10010011b
+    vpblendd  ShrQL0, ShrQL0, ShrQL1, 00000011b
     vpor      ShlQL0, ShlQL0, ShrQL0
     vpsllvq   ShlQL1, QLimb1, ShlQLCnt
     vpsrlvq   ShrQL0, QLimb0, ShrQLCnt
-    vpermq    ShrQL0, ShrQL0, 0b10010011
-    vpblendd  ShrQL1, ShrQL1, ShrQL0, 0b00000011
+    vpermq    ShrQL0, ShrQL0, 10010011b
+    vpblendd  ShrQL1, ShrQL1, ShrQL0, 00000011b
     vmovdqa   [Op2-24], ShlQL0
     vpor      ShlQL1, ShlQL1, ShrQL1
     vmovdqa   [Op2-56], ShlQL1
