@@ -49,7 +49,7 @@ lShl1Equ:
 
  xor EAX, EAX
  sub RDX, 1
- jc .Exit
+ jc .Exit ;ajs:notshortform
 
  lea RDI, [RDI+8*RDX]
  lea RSI, [RSI+8*RDX]
@@ -58,10 +58,10 @@ lShl1Equ:
  shld RAX, R8, 1
 
  or RDX, RDX
- je .lShl1EquPost
+ je .lShl1EquPost ;ajs:notshortform
 
  cmp RDX, 8
- jc .lShl1EquFour
+ jc .lShl1EquFour ;ajs:notshortform
 
 
  test RSI, 8
