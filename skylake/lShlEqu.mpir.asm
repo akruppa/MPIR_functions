@@ -1,5 +1,5 @@
 ; ============================================================================
-; lShlEqu( Op1, Op2: pLimb; Size1, Shift: tCounter; ):tBaseVal;
+; lShlEqu( Op2, Op1: pLimb; Size1, Shift: tCounter; ):tBaseVal;
 ; Linux    RDI  RSI         RDX    RCX               :RAX
 ;
 ; Description:
@@ -38,8 +38,8 @@ segment     .text
 
 %ifdef USE_LINUX64
 
-    %define Op1         RDI
-    %define Op2         RSI
+    %define Op2         RDI
+    %define Op1         RSI
     %define Size1       RDX
     %define Shift       RCX
     %define Limb1       R8

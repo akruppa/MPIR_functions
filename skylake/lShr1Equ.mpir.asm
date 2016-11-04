@@ -1,5 +1,5 @@
 ; ============================================================================
-; lShr1Equ( Op1, Op2: pLimb; Size1: tCounter; ):tBaseVal
+; lShr1Equ( Op2, Op1: pLimb; Size1: tCounter; ):tBaseVal
 ; Linux     RDI  RSI         RDX               :RAX
 ; Win7      RCX  RDX         R8                :RAX
 ;
@@ -33,8 +33,8 @@ segment     .text
 
 %ifdef USE_WIN64
 
-    %define Op1         RCX
-    %define Op2         RDX
+    %define Op2         RCX
+    %define Op1         RDX
     %define Size1       R8
     %define Limb1       R9
     %define Limb2       R10
@@ -53,8 +53,8 @@ segment     .text
 
 %ifdef USE_LINUX64
 
-    %define Op1         RDI
-    %define Op2         RSI
+    %define Op2         RDI
+    %define Op1         RSI
     %define Size1       RDX
     %define Limb1       R8
     %define Limb2       R9
