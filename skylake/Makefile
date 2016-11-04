@@ -1,3 +1,5 @@
+
+TIMINGS=lShl1Equ.mpir.timing  lShlEqu.mpir.timing  lShr1Equ.mpir.timing  lShrEqu.mpir.timing
 all: lCmp.o lCpyDec.o lCpyInc.o lShl1Equ.o lShlEqu.o lShr1Equ.o lShrEqu.o
 
 %.as: %.asm
@@ -5,3 +7,8 @@ all: lCmp.o lCpyDec.o lCpyInc.o lShl1Equ.o lShlEqu.o lShr1Equ.o lShrEqu.o
 
 %.o: %.as
 	yasm -g dwarf2 -m amd64 -f elf64 -o $@ $^
+
+%.timing: %.as %.sig
+	../timing.sh -s `cat $*.sig` -i $< > $@
+
+timing: $(TIMINGS)
