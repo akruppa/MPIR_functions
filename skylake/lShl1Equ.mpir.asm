@@ -170,8 +170,10 @@ lShl1Equ:
     mov     Limb2, [Op1]
     mov     Limb1, Limb2
     shr     Limb2, 63
+    ; pinsrq  ShrDL0, Limb2, 0        ; SSE4.1
+    vpbroadcastq ShlQL0, Limb2
+    vpblendd ShrQL0, ShrQL0, ShlQL0, 3
     vpsllq  ShlQL0, QLimb0, 1
-    pinsrq  ShrDL0, Limb2, 0        ; SSE4.1
     vpor    ShlQL0, ShlQL0, ShrQL0
     vmovdqa [Op2-24], ShlQL0
 
