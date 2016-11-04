@@ -76,7 +76,7 @@ lShl1Equ:
 
     xor     EAX, EAX
     sub      Size1, 1
-    jc      .Exit               ; Size1=0 =>
+    jc      .Exit               #ajs:notshortform ; Size1=0 =>
 
     lea     Op1, [Op1+8*Size1]
     lea     Op2, [Op2+8*Size1]
@@ -85,10 +85,10 @@ lShl1Equ:
     shld    RAX, Limb1, 1
 
     or      Size1, Size1
-    je      .lShl1EquPost       ; Size1=1 =>
+    je      .lShl1EquPost       #ajs:notshortform ; Size1=1 =>
 
     cmp     Size1, 8
-    jc      .lShl1EquFour       ; AVX inefficient =>
+    jc      .lShl1EquFour       #ajs:notshortform ; AVX inefficient =>
 
     ; first align Op2 to 32 bytes
     test    Op2, 8
@@ -124,7 +124,7 @@ lShl1Equ:
     ; pre-fetch first quad-limb
     vmovdqu QLimb0, [Op1-24]
     vpsrlq  ShrQL0, QLimb0, 63
-    vpermq  ShrQL0, ShrQL0, 10010011b
+    vpermq  ShrQL0, ShrQL0, 147		; 0b10010011
 
     sub     Op1, 32
     sub     Size1, 4
@@ -145,13 +145,13 @@ lShl1Equ:
     vpsllq    ShlQL0, QLimb0, 1
     vmovdqu   QLimb0, [Op1-56]
     vpsrlq    ShrQL1, QLimb1, 63
-    vpermq    ShrQL1, ShrQL1, 10010011b
-    vpblendd  ShrQL0, ShrQL0, ShrQL1, 00000011b
+    vpermq    ShrQL1, ShrQL1, 147	; 0b10010011
+    vpblendd  ShrQL0, ShrQL0, ShrQL1, 3	; 0b00000011
     vpor      ShlQL0, ShlQL0, ShrQL0
     vpsllq    ShlQL1, QLimb1, 1
     vpsrlq    ShrQL0, QLimb0, 63
-    vpermq    ShrQL0, ShrQL0, 10010011b
-    vpblendd  ShrQL1, ShrQL1, ShrQL0, 00000011b
+    vpermq    ShrQL0, ShrQL0, 147	; 0b10010011
+    vpblendd  ShrQL1, ShrQL1, ShrQL0, 3	; 0b00000011
     vmovdqa   [Op2-24], ShlQL0
     vpor      ShlQL1, ShlQL1, ShrQL1
     vmovdqa   [Op2-56], ShlQL1
