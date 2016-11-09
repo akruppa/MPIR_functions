@@ -41,6 +41,7 @@ segment     .text
     %define Limb2       R10
     %define Offs        -512    ; used direct def. to stay in Win scratch regs
 
+    %define ShlDL0      XMM2    ; ATTN: this must match ShlQL0 definition
     %define ShrDL0      XMM3    ; ATTN: this must match ShrQL0 definition
 
     %define QLimb0      YMM0
@@ -61,6 +62,7 @@ segment     .text
     %define Limb2       R9
     %define Offs        -512    ; used direct def. to stay in Win scratch regs
 
+    %define ShlDL0      XMM2    ; ATTN: this must match ShlQL0 definition
     %define ShrDL0      XMM3    ; ATTN: this must match ShrQL0 definition
 
     %define QLimb0      YMM0
@@ -166,15 +168,20 @@ lShl1Equ:
     sub     Size1, 8
     jnc     .lShl1EquAVXLoop
 
-    ; I am mixing in a single SSE4.1 instruction into otherwise pure AVX2
-    ; this is generating stalls on Haswell & Broadwell architecture (Agner Fog)
-    ; but it is only executed once and there is no AVX2 based alternative
     mov     Limb2, [Op1]
     mov     Limb1, Limb2
     shr     Limb2, 63
-    ; pinsrq  ShrDL0, Limb2, 0        ; SSE4.1
-    vpbroadcastq ShlQL0, Limb2
+%if 1
+    vmovq ShlDL0, Limb2
     vpblendd ShrQL0, ShrQL0, ShlQL0, 3
+%else
+    ; I am mixing in a single SSE4.1 instruction into otherwise pure AVX2
+    ; this is generating stalls on Haswell & Broadwell architecture (Agner Fog)
+    ; but it is only executed once and there is no AVX2 based alternative
+
+    ; Insert value of Limb2 into the 0-th qword of ShrDL0
+    pinsrq  ShrDL0, Limb2, 0        ; SSE4.1
+%endif
     vpsllq  ShlQL0, QLimb0, 1
     vpor    ShlQL0, ShlQL0, ShrQL0
     vmovdqa [Op2-24], ShlQL0
