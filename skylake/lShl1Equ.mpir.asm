@@ -28,6 +28,7 @@
 BITS 64
 
 global      lShl1Equ:function (lShl1Equ.end - lShl1Equ)
+global      __gmpn_lshift1:function (lShl1Equ.end - lShl1Equ)
 
 segment     .text
 
@@ -72,6 +73,7 @@ segment     .text
 %endif
 
     align   32
+__gmpn_lshift1:
 lShl1Equ:
 
     xor     EAX, EAX
