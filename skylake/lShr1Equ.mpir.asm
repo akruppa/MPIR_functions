@@ -28,6 +28,9 @@
 BITS 64
 
 global      lShr1Equ:function (lShr1Equ.end - lShr1Equ)
+#ifndef IN_TESTBENCH
+global      __gmpn_rshift1:function (lShr1Equ.end - lShr1Equ)
+#endif
 
 segment     .text
 
@@ -40,6 +43,7 @@ segment     .text
     %define Limb2       R10
     %define Offs        512     ; used direct def. to stay in Win scratch regs
 
+    %define ShrDL0      XMM2    ; Attn: this must match ShrQL0 definition
     %define ShlDL0      XMM3    ; Attn: this must match ShlQL0 definition
 
     %define QLimb0      YMM0
@@ -60,6 +64,7 @@ segment     .text
     %define Limb2       R9
     %define Offs        512     ; used direct def. to stay in Win scratch regs
 
+    %define ShrDL0      XMM2    ; Attn: this must match ShrQL0 definition
     %define ShlDL0      XMM3    ; Attn: this must match ShlQL0 definition
 
     %define QLimb0      YMM0
@@ -72,6 +77,9 @@ segment     .text
 %endif
 
     align   32
+#ifndef IN_TESTBENCH
+__gmpn_rshift1:
+#endif
 lShr1Equ:
 
     xor     EAX, EAX
@@ -161,14 +169,19 @@ lShr1Equ:
     sub     Size1, 8
     jnc     .lShr1EquAVXLoop
 
-    ; I am mixing in a single SSE4.1 instruction into otherwise pure AVX2
-    ; this is generating stalls on Haswell & Broadwell architecture (Agner Fog)
-    ; but it is only executed once and there is no AVX2 based alternative
     mov     Limb2, [Op1]
     mov     Limb1, Limb2
     shl     Limb2, 63
-    vpsrlq  ShrQL0, QLimb0, 1
+%if 1
+    vmovq ShrDL0, Limb2
+    vpblendd ShlQL0, ShlQL0, ShrQL0, 3
+%else
+    ; I am mixing in a single SSE4.1 instruction into otherwise pure AVX2
+    ; this is generating stalls on Haswell & Broadwell architecture (Agner Fog)
+    ; but it is only executed once and there is no AVX2 based alternative
     pinsrq  ShlDL0, Limb2, 0            ; SSE4.1
+%endif
+    vpsrlq  ShrQL0, QLimb0, 1
     vpermq  ShlQL0, ShlQL0, 00111001b
     vpor    ShrQL0, ShrQL0, ShlQL0
     vmovdqa [Op2], ShrQL0
