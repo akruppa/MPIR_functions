@@ -25,12 +25,9 @@
 ; - includes cache prefetching
 ; ============================================================================
 
+%include 'yasm_mac.inc'
+
 BITS 64
-
-global      lShl1Equ:function (lShl1Equ.end - lShl1Equ)
-global      __gmpn_lshift1:function (lShl1Equ.end - lShl1Equ)
-
-segment     .text
 
 %ifdef USE_WIN64
 
@@ -51,9 +48,7 @@ segment     .text
     %define ShlQL1      YMM4
     %define ShrQL1      YMM5
 
-%endif
-
-%ifdef USE_LINUX64
+%else
 
     %define Op2         RDI
     %define Op1         RSI
@@ -75,8 +70,8 @@ segment     .text
 %endif
 
     align   32
-__gmpn_lshift1:
-lShl1Equ:
+
+GLOBAL_FUNC mpn_lshift1
 
     xor     EAX, EAX
     sub      Size1, 1
