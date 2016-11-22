@@ -172,14 +172,19 @@ lShlEqu:
     sub     Size1, 8
     jnc     .lShlEquAVXLoop
 
-    ; I am mixing in a single SSE4.1 instruction into otherwise pure AVX2
-    ; this is generating stalls on Haswell & Broadwell architecture (Agner Fog)
-    ; but it is only executed once and there is no AVX2 based alternative
     mov     Limb1, [Op1]
     xor     Limb2, Limb2
     shld    Limb2, Limb1, CL
-    vpsllvq ShlQL0, QLimb0, ShlQLCnt
+%if 1
+    vmovq   ShlDL0, Limb2
+    vpblendd ShrQL0, ShrQL0, ShlQL0, 3
+%else
+    ; I am mixing in a single SSE4.1 instruction into otherwise pure AVX2
+    ; this is generating stalls on Haswell & Broadwell architecture (Agner Fog)
+    ; but it is only executed once and there is no AVX2 based alternative
     pinsrq  ShrDL0, Limb2, 0        ; SSE4.1
+%endif
+    vpsllvq ShlQL0, QLimb0, ShlQLCnt
     vpor    ShlQL0, ShlQL0, ShrQL0
     vmovdqa [Op2-24], ShlQL0
 
@@ -243,5 +248,6 @@ lShlEqu:
 
   .Exit:
 
+    vzeroupper
     ret
 .end:
