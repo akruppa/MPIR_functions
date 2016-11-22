@@ -1,6 +1,7 @@
 ; ============================================================================
 ; lShlEqu( Op2, Op1: pLimb; Size1, Shift: tCounter; ):tBaseVal;
 ; Linux    RDI  RSI         RDX    RCX               :RAX
+; Win7     RCX  RDX         R8     R9                :RAX
 ;
 ; Description:
 ; The function shifts Op1 left by n bit, stores the result in Op2 (non-
@@ -30,14 +31,11 @@
 ; - includes prefetching
 ; ============================================================================
 
+%include 'yasm_mac.inc'
+
 BITS 64
 
-global      lShlEqu:function (lShlEqu.end - lShlEqu)
-
-segment     .text
-
 %ifdef USE_LINUX64
-
     %define Op2         RDI
     %define Op1         RSI
     %define Size1       RDX
@@ -45,31 +43,40 @@ segment     .text
     %define Limb1       R8
     %define Limb2       R9
   %ifdef USE_PREFETCH
+    %define OFFS_REG 1
     %define Offs        R10
   %endif
-
-  %ifdef USE_AVX
-    %define ShrDL0      XMM3    ; Attn: this must match ShrQL0 definition
-    %define ShlDLCnt    XMM6    ; Attn: this must match ShlQlCnt definition
-    %define ShrDLCnt    XMM7    ; Attn: this must match ShrQlCnt definition
-
-    %define QLimb0      YMM0
-    %define QLimb1      YMM1
-    %define ShlQL0      YMM2
-    %define ShrQL0      YMM3
-    %define ShlQL1      YMM4
-    %define ShrQL1      YMM5
-    %define ShlQLCnt    YMM6
-    %define ShrQLCnt    YMM7
+%else
+    %define Op2         RCX
+    %define Op1         RDX
+    %define Size1       R8
+    %define Shift       R9
+    %define Limb1       R10
+    %define Limb2       R11
+  %ifdef USE_PREFETCH
+    %define Offs        -512    ; No caller-saves regs left, use immediate
   %endif
-
 %endif
 
+%define ShlDL0      XMM2
+%define ShrDL0      XMM3    ; Attn: this must match ShrQL0 definition
+%define ShlDLCnt    XMM6    ; Attn: this must match ShlQlCnt definition
+%define ShrDLCnt    XMM7    ; Attn: this must match ShrQlCnt definition
+
+%define QLimb0      YMM0
+%define QLimb1      YMM1
+%define ShlQL0      YMM2
+%define ShrQL0      YMM3
+%define ShlQL1      YMM4
+%define ShrQL1      YMM5
+%define ShlQLCnt    YMM6
+%define ShrQLCnt    YMM7
+
     align   32
-lShlEqu:
+GLOBAL_FUNC mpn_lshift
 
     xor     EAX, EAX
-    sub      Size1, 1
+    sub     Size1, 1
     jc      .Exit               ; Size1=0 =>
 
     lea     Op1, [Op1+8*Size1]
@@ -82,7 +89,9 @@ lShlEqu:
     je      .lShlEquPost        ; Size1=1 =>
 
   %ifdef USE_PREFETCH
+  %ifdef OFFS_REG
     mov     Offs, -512
+  %endif
   %endif
 
     cmp     Size1, 8
