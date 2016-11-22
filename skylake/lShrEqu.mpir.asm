@@ -1,6 +1,7 @@
 ; ============================================================================
 ; lShrEqu( Op2, Op1: pLimb; Size1, Shift: tCounter ):tBaseVal
 ; Linux    RDI  RSI         RDX    RCX              :RAX
+; Win7     RCX  RDX         R8     R9               :RAX
 ;
 ; Description:
 ; The function shifts Op1 right by Shift bits, stores the result in Op2 (non-
@@ -30,14 +31,21 @@
 ; - includes prefetching
 ; ============================================================================
 
+%include 'yasm_mac.inc'
+
 BITS 64
 
-global      lShrEqu:function (lShrEqu.end - lShrEqu)
-
-segment     .text
-
-%ifdef USE_LINUX64
-
+%ifdef USE_WIN64
+    %define Op2         RCX
+    %define Op1         RDX
+    %define Size1       R8
+    %define Shift       R9
+    %define Limb1       R10
+    %define Limb2       R11
+  %ifdef USE_PREFETCH
+    %define Offs        -512    ; No caller-saves regs left, use immediate
+  %endif
+%else
     %define Op2         RDI
     %define Op1         RSI
     %define Size1       RDX
@@ -45,28 +53,27 @@ segment     .text
     %define Limb1       R8
     %define Limb2       R9
   %ifdef USE_PREFETCH
+    %define OFFS_REG 1
     %define Offs        R10
   %endif
-
-  %ifdef USE_AVX
-    %define ShlDL0      XMM3    ; Attn: this must match ShlQL0 definition
-    %define ShrDLCnt    XMM6    ; Attn: this must match ShrQlCnt definition
-    %define ShlDLCnt    XMM7    ; Attn: this must match ShlQlCnt definition
-
-    %define QLimb0      YMM0
-    %define QLimb1      YMM1
-    %define ShrQL0      YMM2
-    %define ShlQL0      YMM3
-    %define ShrQL1      YMM4
-    %define ShlQL1      YMM5
-    %define ShrQLCnt    YMM6
-    %define ShlQLCnt    YMM7
-  %endif
-
 %endif
 
+%define ShrDL0      XMM2    ; Attn: this must match ShrQL0 definition
+%define ShlDL0      XMM3    ; Attn: this must match ShlQL0 definition
+%define ShrDLCnt    XMM6    ; Attn: this must match ShrQlCnt definition
+%define ShlDLCnt    XMM7    ; Attn: this must match ShlQlCnt definition
+
+%define QLimb0      YMM0
+%define QLimb1      YMM1
+%define ShrQL0      YMM2
+%define ShlQL0      YMM3
+%define ShrQL1      YMM4
+%define ShlQL1      YMM5
+%define ShrQLCnt    YMM6
+%define ShlQLCnt    YMM7
+
     align   32
-lShrEqu:
+GLOBAL_FUNC mpn_rshift
 
     xor     EAX, EAX
     or      Size1, Size1
@@ -168,14 +175,19 @@ lShrEqu:
     sub     Size1, 8
     jnc     .lShrEquAVXLoop
 
-    ; I am mixing in a single SSE4.1 instruction into otherwise pure AVX2
-    ; this is generating stalls on Haswell & Broadwell architecture (Agner Fog)
-    ; but it is only executed once and there is no AVX2 based alternative
     mov     Limb1, [Op1]
     xor     Limb2, Limb2
     shrd    Limb2, Limb1, CL
-    vpsrlvq ShrQL0, QLimb0, ShrQLCnt
+%if 1
+    vmovq   ShrDL0, Limb2
+    vpblendd ShlQL0, ShlQL0, ShrQL0, 3
+%else
+    ; I am mixing in a single SSE4.1 instruction into otherwise pure AVX2
+    ; this is generating stalls on Haswell & Broadwell architecture (Agner Fog)
+    ; but it is only executed once and there is no AVX2 based alternative
     pinsrq  ShlDL0, Limb2, 0            ; SSE4.1
+%endif
+    vpsrlvq ShrQL0, QLimb0, ShrQLCnt
     vpermq  ShlQL0, ShlQL0, 00111001b
     vpor    ShrQL0, ShrQL0, ShlQL0
     vmovdqa [Op2], ShrQL0
@@ -241,5 +253,6 @@ lShrEqu:
 
   .Exit:
 
+    vzeroupper
     ret
 .end:
