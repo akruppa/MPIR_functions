@@ -58,7 +58,7 @@ BITS 64
   %endif
 %endif
 
-%define ShlDL0      XMM2
+%define ShlDL0      XMM2    ; Attn: this must match ShlQL0 definition
 %define ShrDL0      XMM3    ; Attn: this must match ShrQL0 definition
 %define ShlDLCnt    XMM6    ; Attn: this must match ShlQlCnt definition
 %define ShrDLCnt    XMM7    ; Attn: this must match ShrQlCnt definition
