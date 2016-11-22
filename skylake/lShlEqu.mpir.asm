@@ -35,7 +35,17 @@
 
 BITS 64
 
-%ifdef USE_LINUX64
+%ifdef USE_WIN64
+    %define Op2         RCX
+    %define Op1         RDX
+    %define Size1       R8
+    %define Shift       R9
+    %define Limb1       R10
+    %define Limb2       R11
+  %ifdef USE_PREFETCH
+    %define Offs        -512    ; No caller-saves regs left, use immediate
+  %endif
+%else
     %define Op2         RDI
     %define Op1         RSI
     %define Size1       RDX
@@ -45,16 +55,6 @@ BITS 64
   %ifdef USE_PREFETCH
     %define OFFS_REG 1
     %define Offs        R10
-  %endif
-%else
-    %define Op2         RCX
-    %define Op1         RDX
-    %define Size1       R8
-    %define Shift       R9
-    %define Limb1       R10
-    %define Limb2       R11
-  %ifdef USE_PREFETCH
-    %define Offs        -512    ; No caller-saves regs left, use immediate
   %endif
 %endif
 
