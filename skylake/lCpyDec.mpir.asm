@@ -155,8 +155,16 @@ GLOBAL_FUNC mpn_copyd
     test    Size1, 2
     je      .lCpyDecOne
 
+%if 1
+    ; Avoid SSE2 instruction due to stall on Haswell
+    mov     Limb, [Op1-8]
+    mov     [Op2-8], Limb
+    mov     Limb, [Op1]
+    mov     [Op2], Limb
+%else
     movdqu  DLimb0, [Op1-8]
     movdqa  [Op2-8], DLimb0
+%endif
 
     sub     Op1, 16
     sub     Op2, 16
