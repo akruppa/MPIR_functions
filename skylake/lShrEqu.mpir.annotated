@@ -77,20 +77,20 @@ GLOBAL_FUNC mpn_rshift
 
     xor     EAX, EAX
     or      Size1, Size1
-    je      .Exit
+    je      .Exit               #ajs:notshortform
 
     mov     Limb1, [Op1]
     shrd    RAX, Limb1, CL
 
     sub     Size1, 1
-    je      .lShrEquPost        ; Size1=1 =>
+    je      .lShrEquPost        #ajs:notshortform ; Size1=1 =>
 
   %ifdef USE_PREFETCH
     mov     Offs, 512
   %endif
 
     cmp     Size1, 8
-    jc      .lShrEquFour        ; AVX inefficient =>
+    jc      .lShrEquFour        #ajs:notshortform ; AVX inefficient =>
 
     ; first align Op2 to 32 bytes
     test    Op2, 8
