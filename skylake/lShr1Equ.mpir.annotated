@@ -75,17 +75,17 @@ GLOBAL_FUNC mpn_rshift1
 
     xor     EAX, EAX
     or      Size1, Size1
-    je      .Exit
+    je      .Exit               # ajs:notshortform
 
     mov     RAX, [Op1]
     mov     Limb1, RAX
     shl     RAX, 63
 
     sub     Size1, 1
-    je      .lShr1EquPost       ; Size1=1 =>
+    je      .lShr1EquPost       # ajs:notshortform ; Size1=1 =>
 
     cmp     Size1, 8
-    jc      .lShr1EquFour       ; AVX inefficient =>
+    jc      .lShr1EquFour       # ajs:notshortform ; AVX inefficient =>
 
     ; first align Op2 to 32 bytes
     test    Op2, 8
@@ -141,13 +141,13 @@ GLOBAL_FUNC mpn_rshift1
     vpsrlq    ShrQL0, QLimb0, 1
     vmovdqu   QLimb0, [Op1+32]
     vpsllq    ShlQL1, QLimb1, 63
-    vpblendd  ShlQL0, ShlQL0, ShlQL1, 00000011b
-    vpermq    ShlQL0, ShlQL0, 00111001b
+    vpblendd  ShlQL0, ShlQL0, ShlQL1, 3 ; 00000011b
+    vpermq    ShlQL0, ShlQL0, 57 ; 00111001b
     vpor      ShrQL0, ShrQL0, ShlQL0
     vpsrlq    ShrQL1, QLimb1, 1
     vpsllq    ShlQL0, QLimb0, 63
-    vpblendd  ShlQL1, ShlQL1, ShlQL0, 00000011b
-    vpermq    ShlQL1, ShlQL1, 00111001b
+    vpblendd  ShlQL1, ShlQL1, ShlQL0, 3 ; 00000011b
+    vpermq    ShlQL1, ShlQL1, 57 ; 00111001b
     vmovdqa   [Op2], ShrQL0
     vpor      ShrQL1, ShrQL1, ShlQL1
     vmovdqa   [Op2+32], ShrQL1
@@ -173,7 +173,7 @@ GLOBAL_FUNC mpn_rshift1
     pinsrq  ShlDL0, Limb2, 0            ; SSE4.1
 %endif
     vpsrlq  ShrQL0, QLimb0, 1
-    vpermq  ShlQL0, ShlQL0, 00111001b
+    vpermq  ShlQL0, ShlQL0, 57 ; 00111001b
     vpor    ShrQL0, ShrQL0, ShlQL0
     vmovdqa [Op2], ShrQL0
 
