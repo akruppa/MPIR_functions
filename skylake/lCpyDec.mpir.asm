@@ -157,10 +157,10 @@ GLOBAL_FUNC mpn_copyd
 
 %if 1
     ; Avoid SSE2 instruction due to stall on Haswell
-    mov     Limb, [Op1-8]
-    mov     [Op2-8], Limb
     mov     Limb, [Op1]
     mov     [Op2], Limb
+    mov     Limb, [Op1-8]
+    mov     [Op2-8], Limb
 %else
     movdqu  DLimb0, [Op1-8]
     movdqa  [Op2-8], DLimb0
