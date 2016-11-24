@@ -1,4 +1,4 @@
-; ============================================================================
+	; ============================================================================
 ; lShlEqu( Op2, Op1: pLimb; Size1, Shift: tCounter; ):tBaseVal;
 ; Linux    RDI  RSI         RDX    RCX               :RAX
 ; Win7     RCX  RDX         R8     R9                :RAX
@@ -77,7 +77,7 @@ GLOBAL_FUNC mpn_lshift
 
     xor     EAX, EAX
     sub     Size1, 1
-    jc      .Exit               ; Size1=0 =>
+    jc      .Exit               #ajs:notshortform ; Size1=0 =>
 
     lea     Op1, [Op1+8*Size1]
     lea     Op2, [Op2+8*Size1]
@@ -86,7 +86,7 @@ GLOBAL_FUNC mpn_lshift
     shld    RAX, Limb1, CL
 
     or      Size1, Size1
-    je      .lShlEquPost        ; Size1=1 =>
+    je      .lShlEquPost        #ajs:notshortform ; Size1=1 =>
 
   %ifdef USE_PREFETCH
   %ifdef OFFS_REG
@@ -95,7 +95,7 @@ GLOBAL_FUNC mpn_lshift
   %endif
 
     cmp     Size1, 8
-    jc      .lShlEquFour        ; AVX inefficient =>
+    jc      .lShlEquFour        #ajs:notshortform ; AVX inefficient =>
 
     ; first align Op2 to 32 bytes
     test    Op2, 8
@@ -141,7 +141,7 @@ GLOBAL_FUNC mpn_lshift
     ; pre-fetch first quad-limb
     vmovdqu QLimb0, [Op1-24]
     vpsrlvq ShrQL0, QLimb0, ShrQLCnt
-    vpermq  ShrQL0, ShrQL0, 10010011b
+    vpermq  ShrQL0, ShrQL0, 147 ; 10010011b
 
     sub     Op1, 32
     sub     Size1, 4
@@ -162,13 +162,13 @@ GLOBAL_FUNC mpn_lshift
     vpsllvq   ShlQL0, QLimb0, ShlQLCnt
     vmovdqu   QLimb0, [Op1-56]
     vpsrlvq   ShrQL1, QLimb1, ShrQLCnt
-    vpermq    ShrQL1, ShrQL1, 10010011b
-    vpblendd  ShrQL0, ShrQL0, ShrQL1, 00000011b
+    vpermq    ShrQL1, ShrQL1, 147 ; 10010011b
+    vpblendd  ShrQL0, ShrQL0, ShrQL1, 3 ; 00000011b
     vpor      ShlQL0, ShlQL0, ShrQL0
     vpsllvq   ShlQL1, QLimb1, ShlQLCnt
     vpsrlvq   ShrQL0, QLimb0, ShrQLCnt
-    vpermq    ShrQL0, ShrQL0, 10010011b
-    vpblendd  ShrQL1, ShrQL1, ShrQL0, 00000011b
+    vpermq    ShrQL0, ShrQL0, 147 ; 10010011b
+    vpblendd  ShrQL1, ShrQL1, ShrQL0, 3 ; 00000011b
     vmovdqa   [Op2-24], ShlQL0
     vpor      ShlQL1, ShlQL1, ShrQL1
     vmovdqa   [Op2-56], ShlQL1
