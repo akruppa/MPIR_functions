@@ -3,10 +3,10 @@ TIMINGS=lShl1Equ.mpir.timing  lShlEqu.mpir.timing  lShr1Equ.mpir.timing  lShrEqu
 all: lCmp.o lCpyDec.o lCpyInc.o lShl1Equ.o lShlEqu.o lShr1Equ.o lShrEqu.o lShl1Equ.asm
 
 %.as: %.annotated
-	yasm -e -D USE_LINUX64 -D USE_AVX -m amd64 $^ | tr "#" ";" > $@
+	yasm -I./ -e -D USE_LINUX64 -D USE_AVX -m amd64 $^ | tr "#" ";" > $@
 
 %.as: %.asm
-	yasm -e -D USE_LINUX64 -D USE_AVX -m amd64 $^ > $@
+	yasm -I./ -e -D USE_LINUX64 -D USE_AVX -m amd64 $^ > $@
 
 %.asm: %.annotated
 	tr "#" ";" < $^ > $@
