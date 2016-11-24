@@ -156,13 +156,13 @@ GLOBAL_FUNC mpn_rshift
     vpsrlvq   ShrQL0, QLimb0, ShrQLCnt
     vmovdqu   QLimb0, [Op1+32]
     vpsllvq   ShlQL1, QLimb1, ShlQLCnt
-    vpblendd  ShlQL0, ShlQL0, ShlQL1, 00000011b
-    vpermq    ShlQL0, ShlQL0, 00111001b
+    vpblendd  ShlQL0, ShlQL0, ShlQL1, 3 ; 00000011b
+    vpermq    ShlQL0, ShlQL0, 57 ; 00111001b
     vpor      ShrQL0, ShrQL0, ShlQL0
     vpsrlvq   ShrQL1, QLimb1, ShrQLCnt
     vpsllvq   ShlQL0, QLimb0, ShlQLCnt
-    vpblendd  ShlQL1, ShlQL1, ShlQL0, 00000011b
-    vpermq    ShlQL1, ShlQL1, 00111001b
+    vpblendd  ShlQL1, ShlQL1, ShlQL0, 3 ; 00000011b
+    vpermq    ShlQL1, ShlQL1, 57 ; 00111001b
     vmovdqa   [Op2], ShrQL0
     vpor      ShrQL1, ShrQL1, ShlQL1
     vmovdqa   [Op2+32], ShrQL1
@@ -188,7 +188,7 @@ GLOBAL_FUNC mpn_rshift
     pinsrq  ShlDL0, Limb2, 0            ; SSE4.1
 %endif
     vpsrlvq ShrQL0, QLimb0, ShrQLCnt
-    vpermq  ShlQL0, ShlQL0, 00111001b
+    vpermq  ShlQL0, ShlQL0, 57 ; 00111001b
     vpor    ShrQL0, ShrQL0, ShlQL0
     vmovdqa [Op2], ShrQL0
 
