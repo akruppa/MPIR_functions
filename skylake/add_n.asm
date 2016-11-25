@@ -57,21 +57,23 @@ GLOBAL_FUNC mpn_add_n
     shr    al, 1
 align 32
 .loop:
-    mov	   Limb1, [Op1 + Offs]		; 1,1 p23
-    adc    Limb1, [Op2 + Offs]		; 2,3 2p0156 p23
-    mov	   Limb2, [Op1 + Offs + 8]	; 1,1 p23
-    adc    Limb2, [Op2 + Offs + 8]	; 2,3 2p0156 p23
-    mov    [Op3 + Offs], Limb1		; 1,2 p237 p4
-    mov    [Op3 + Offs + 8], Limb2	; 1,2 p237 p4
+    mov	   Limb1, [Op1]			; 1,1 p23
+    adc    Limb1, [Op2]			; 2,3 2p0156 p23
+    mov	   Limb2, [Op1 + 8]		; 1,1 p23
+    adc    Limb2, [Op2 + 8]		; 2,3 2p0156 p23
+    mov    [Op3], Limb1			; 1,2 p237 p4
+    mov    [Op3 + 8], Limb2		; 1,2 p237 p4
 
-    mov	   Limb3, [Op1 + Offs + 16]	; 1,1 p23
-    mov	   Limb4, [Op1 + Offs + 24]	; 1,1 p23
-    adc    Limb3, [Op2 + Offs + 16]	; 2,3 2p0156 p23
-    adc    Limb4, [Op2 + Offs + 24]	; 2,3 2p0156 p23
-    mov    [Op3 + Offs + 16], Limb3	; 1,2 p237 p4
-    mov    [Op3 + Offs + 24], Limb4	; 1,2 p237 p4
+    mov	   Limb3, [Op1 + 16]		; 1,1 p23
+    mov	   Limb4, [Op1 + 24]		; 1,1 p23
+    adc    Limb3, [Op2 + 16]		; 2,3 2p0156 p23
+    adc    Limb4, [Op2 + 24]		; 2,3 2p0156 p23
+    mov    [Op3 + 16], Limb3		; 1,2 p237 p4
+    mov    [Op3 + 24], Limb4		; 1,2 p237 p4
 
-    lea    Offs, [Offs + 32]		; 1,1 p15
+    lea    Op1, [Op1 + 32]		; 1,1 p15
+    lea    Op2, [Op2 + 32]		; 1,1 p15
+    lea    Op3, [Op3 + 32]		; 1,1 p15
     dec    Size1			; 1,1 p0156
     jnz    .loop			; 1,1 p6
 
