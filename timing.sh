@@ -9,13 +9,29 @@ then
   source timing_config.sh
 fi
 
+if [ "x$1" = "x-a1" ]
+then
+  ALIGNMENTS1="$2"
+  shift 2
+else
+  ALIGNMENTS1="0 8 16 24"
+fi
+
+if [ "x$1" = "x-a2" ]
+then
+  ALIGNMENTS2="$2"
+  shift 2
+else
+  ALIGNMENTS2="0 8 16 24"
+fi
+
 COMMENT="#"
 for L in `seq 100`
 do
   LINE="$L"
-  for A1 in 0 8 16 24
+  for A1 in $ALIGNMENTS1
   do
-    for A2 in 0 8 16 24
+    for A2 in $ALIGNMENTS2
     do
       ALIGNMENT="$A1,$A2,0,0"
       if [ -n "$COMMENT" ]
@@ -24,7 +40,7 @@ do
       fi
       for I in 1 2 3
       do
-        TIMES[$I]="`~/ajs-jev $CPUBIND -m 1 -l "$L" -d "$ALIGNMENT" "$@" | grep "# original sequence" | cut -d " " -f 4 | cut -d . -f 1`"
+        TIMES[$I]="`~/ajs-jev $CPUBIND -m 1 -l "$L" -d "$ALIGNMENT" "$@" | grep "# original sequence" | cut -d " " -f 4 | cut -d . -f 1`" || exit 1
       done
       # Sort the timings into increasing order
       if [ "${TIMES[1]}" -gt "${TIMES[2]}" ]; then T="${TIMES[1]}"; TIMES[1]="${TIMES[2]}"; TIMES[2]="$T"; fi
