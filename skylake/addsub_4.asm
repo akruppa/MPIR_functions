@@ -20,6 +20,9 @@ BITS 64
 
 global addsub_4
 
+; for an n-bit integer x, 0 <= x < 2^n, -x = NOT_n(x) + 1,
+; where NOT_n(x) is the length-n one's complement of x.
+
 addsub_4:
 
 xor rax, rax
@@ -29,7 +32,8 @@ vpbroadcastq Vones, Xones
 xor rax, rax
 
 
-stc
+stc			; Init carry chain to 1 to effect the "+ 1"
+                        ; in -x = NOT_n(x) + 1
 
 .avxloop:
 
