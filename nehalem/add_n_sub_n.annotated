@@ -185,7 +185,7 @@ GLOBAL_FUNC mpn_addsub_n
   .sumdiff_n_four:
 
     test    Size, 4
-    je      .sumdiff_n_test
+    je      .sumdiff_n_test #ajs:notshortform
 
     add     AL, AL
 
@@ -230,7 +230,7 @@ GLOBAL_FUNC mpn_addsub_n
     add     Op2, 32
     add     Op3, 32
     add     Op4, 32
-    jmp     .sumdiff_n_test
+    jmp     .sumdiff_n_test #ajs:notshortform
 
     ; main loop - values below are best case - up to 50% fluctuation possible!
     ; - 3.50      cycles per limb in LD1$
