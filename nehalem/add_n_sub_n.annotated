@@ -127,8 +127,8 @@ GLOBAL_FUNC mpn_addsub_n
 
     xor     EAX, EAX            ; clear add & sub carry
 
-    test    Size, 1
-    je      .sumdiff_n_two
+    shr     Size, 1
+    jnc     .sumdiff_n_two
 
     mov     Limb1, [Op1]
     mov     Limb5, [Op2]
@@ -150,8 +150,8 @@ GLOBAL_FUNC mpn_addsub_n
 
   .sumdiff_n_two:
 
-    test    Size, 2
-    je      .sumdiff_n_four
+    shr     Size, 1
+    jnc     .sumdiff_n_four
 
     mov     Limb1, [Op1]
     mov     Limb2, [Op1+8]
@@ -184,8 +184,8 @@ GLOBAL_FUNC mpn_addsub_n
 
   .sumdiff_n_four:
 
-    test    Size, 4
-    je      .sumdiff_n_test #ajs:notshortform
+    shr     Size, 1
+    jnc     .sumdiff_n_loop_pre #ajs:notshortform
 
     add     AL, AL
 
@@ -230,7 +230,11 @@ GLOBAL_FUNC mpn_addsub_n
     add     Op2, 32
     add     Op3, 32
     add     Op4, 32
-    jmp     .sumdiff_n_test #ajs:notshortform
+ 
+    test   Size, Size
+  .sumdiff_n_loop_pre:
+    jz     .sumdiff_n_post      #ajs:notshortform
+    add     AL, AL              ; set carry for addition
 
     ; main loop - values below are best case - up to 50% fluctuation possible!
     ; - 3.50      cycles per limb in LD1$
@@ -243,8 +247,6 @@ GLOBAL_FUNC mpn_addsub_n
     prefetchnta [Op1+Offs]
     prefetchnta [Op2+Offs]
   %endif
-
-    add     AL, AL              ; set carry for addition
 
     mov     Limb1, [Op1]        ; add the first quad-limb
     mov     Limb5, [Op2]
@@ -312,18 +314,18 @@ GLOBAL_FUNC mpn_addsub_n
     adc     Limb4, Limb8
     mov     [Op3+56], Limb4
 
-    sbb     AL, AL              ; memorize add-carry
 
-    add     Op1, 64
-    add     Op2, 64
-    add     Op3, 64
-    add     Op4, 64
+    lea     Op1, [Op1 + 64]
+    lea     Op2, [Op2 + 64]
+    lea     Op3, [Op3 + 64]
+    lea     Op4, [Op4 + 64]
 
   .sumdiff_n_test:
 
-    sub     Size, 8
-    jnc     .sumdiff_n_loop
+    dec     Size
+    jnz     .sumdiff_n_loop     #ajs:notshortform
 
+    sbb     AL, AL              ; memorize add-carry
     ; hand back carries
   .sumdiff_n_post:
 				; AL = -add_carry, AH = -sub_carry
