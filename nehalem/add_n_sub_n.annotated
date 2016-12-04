@@ -232,7 +232,7 @@ GLOBAL_FUNC mpn_addsub_n
     add     Op4, 32
  
     test   Size, Size
-  .sumdiff_n_loop_pre:
+  .sumdiff_n_loop_pre:		; If we jump here, ZF=1 iff Size=0
     jz     .sumdiff_n_post      #ajs:notshortform
     add     AL, AL              ; set carry for addition
 
