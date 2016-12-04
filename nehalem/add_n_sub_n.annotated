@@ -269,6 +269,7 @@ GLOBAL_FUNC mpn_sumdiff_n
     mov     Limb0, Limb4
     adc     Limb0, Limb8
     mov     [Op3+24], Limb0
+    lea     Op3, [Op3 + 64]
 
     SaveAC              ; memorize add-carry
     LoadSC              ; set carry for subtraction
@@ -302,26 +303,22 @@ GLOBAL_FUNC mpn_sumdiff_n
     mov     Limb0, Limb4
     sbb     Limb0, Limb8
     mov     [Op4+56], Limb0
+    lea     Op4, [Op4 + 64]
 
     SaveSC                      ; memorize sub-carry
     LoadAC                      ; set carry for addition
 
     adc     Limb1, Limb5        ; add the second quad-limb
-    mov     [Op3+32], Limb1
+    mov     [Op3+32-64], Limb1
     adc     Limb2, Limb6
-    mov     [Op3+40], Limb2
+    mov     [Op3+40-64], Limb2
     adc     Limb3, Limb7
-    mov     [Op3+48], Limb3
+    mov     [Op3+48-64], Limb3
     adc     Limb4, Limb8
-    mov     [Op3+56], Limb4
-
+    mov     [Op3+56-64], Limb4
 
     lea     Op1, [Op1 + 64]
     lea     Op2, [Op2 + 64]
-    lea     Op3, [Op3 + 64]
-    lea     Op4, [Op4 + 64]
-
-  .sumdiff_n_test:
 
     dec     Size
     jnz     .sumdiff_n_loop     #ajs:notshortform
