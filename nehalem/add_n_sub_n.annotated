@@ -98,6 +98,11 @@ GLOBAL_FUNC mpn_sumdiff_n
     %define SaveR14 XMM4
     %define SaveR15 XMM5
 
+    %define SaveAC  setc    AL		; 1 1 p06
+    %define LoadAC  shr     AL, 1	; 1 1 p06
+
+    %define SaveSC  sbb     AH, AH	; 1 1 p06
+    %define LoadSC  add     AH, AH	; 1 1 p0156
 %endif
 
 
@@ -132,12 +137,12 @@ GLOBAL_FUNC mpn_sumdiff_n
     add     Limb2, Limb5
     mov     [Op3], Limb2
 
-    sbb     AL, AL
+    SaveAC
 
     sub     Limb1, Limb5
     mov     [Op4], Limb1
 
-    sbb     AH, AH
+    SaveSC
 
     add     Op1, 8
     add     Op2, 8
@@ -154,7 +159,7 @@ GLOBAL_FUNC mpn_sumdiff_n
     mov     Limb5, [Op2]
     mov     Limb6, [Op2+8]
 
-    add     AL, AL
+    LoadAC
 
     mov     Limb3, Limb1
     adc     Limb3, Limb5
@@ -163,15 +168,15 @@ GLOBAL_FUNC mpn_sumdiff_n
     adc     Limb4, Limb6
     mov     [Op3+8], Limb4
 
-    sbb     AL, AL
-    add     AH, AH
+    SaveAC
+    LoadSC
 
     sbb     Limb1, Limb5
     mov     [Op4], Limb1
     sbb     Limb2, Limb6
     mov     [Op4+8], Limb2
 
-    sbb     AH, AH
+    SaveSC
 
     add     Op1, 16
     add     Op2, 16
@@ -183,7 +188,7 @@ GLOBAL_FUNC mpn_sumdiff_n
     shr     Size, 1
     jnc     .sumdiff_n_loop_pre #ajs:notshortform
 
-    add     AL, AL
+    LoadAC
 
     ; slight change of scheme here - avoid too many
     ; memory to reg or reg to memory moves in a row
@@ -208,8 +213,8 @@ GLOBAL_FUNC mpn_sumdiff_n
     adc     Limb0, Limb8
     mov     [Op3+24], Limb0
 
-    sbb     AL, AL
-    add     AH, AH
+    SaveAC
+    LoadSC
 
     sbb     Limb1, Limb5
     mov     [Op4], Limb1
@@ -220,7 +225,7 @@ GLOBAL_FUNC mpn_sumdiff_n
     sbb     Limb4, Limb8
     mov     [Op4+24], Limb4
 
-    sbb     AH, AH
+    SaveSC
 
     add     Op1, 32
     add     Op2, 32
@@ -230,7 +235,7 @@ GLOBAL_FUNC mpn_sumdiff_n
     test   Size, Size
   .sumdiff_n_loop_pre:		; If we jump here, ZF=1 iff Size=0
     jz     .sumdiff_n_post      #ajs:notshortform
-    add     AL, AL              ; set carry for addition
+    LoadAC              ; set carry for addition
 
     ; main loop - values below are best case - up to 50% fluctuation possible!
     ; - 3.50      cycles per limb in LD1$
@@ -265,8 +270,8 @@ GLOBAL_FUNC mpn_sumdiff_n
     adc     Limb0, Limb8
     mov     [Op3+24], Limb0
 
-    sbb     AL, AL              ; memorize add-carry
-    add     AH, AH              ; set carry for subtraction
+    SaveAC              ; memorize add-carry
+    LoadSC              ; set carry for subtraction
 
     sbb     Limb1, Limb5        ; now sub the first quad-limb
     mov     [Op4], Limb1
@@ -298,8 +303,8 @@ GLOBAL_FUNC mpn_sumdiff_n
     sbb     Limb0, Limb8
     mov     [Op4+56], Limb0
 
-    sbb     AH, AH              ; memorize sub-carry
-    add     AL, AL              ; set carry for addition
+    SaveSC                      ; memorize sub-carry
+    LoadAC                      ; set carry for addition
 
     adc     Limb1, Limb5        ; add the second quad-limb
     mov     [Op3+32], Limb1
@@ -321,12 +326,11 @@ GLOBAL_FUNC mpn_sumdiff_n
     dec     Size
     jnz     .sumdiff_n_loop     #ajs:notshortform
 
-    sbb     AL, AL              ; memorize add-carry
+    SaveAC                      ; memorize add-carry
     ; hand back carries
   .sumdiff_n_post:
-				; AL = -add_carry, AH = -sub_carry
-    neg     AL   		; AL = add_carry, AH = -sub_carry
-    add     AH, AH		; AL = add_carry, CY = sub_carry
+				; AL = add_carry, AH = -sub_carry
+    LoadSC			; AL = add_carry, CY = sub_carry
     adc     AL, AL		; AL = 2*add_carry + sub_carry
     movsx   RAX, AL
 
