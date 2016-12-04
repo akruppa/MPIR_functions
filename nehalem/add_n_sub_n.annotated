@@ -13,7 +13,7 @@
 ;  along with the MPIR Library; see the file COPYING.LIB.  If not, write
 ;  to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 ;  Boston, MA 02110-1301, USA.
-; sumdiff_n( Op1, Op2, Op3, Op4: pLimb Size: tCounter; ):tBaseVal;
+; sumdiff_n( Op3, Op4, Op1, Op2: pLimb Size: tCounter; ):tBaseVal;
 ; Linux      RDI  RSI  RDX  RCX        R8          :RAX
 ; Win7       RCX  RDX  R8   R9         Stack       :RAX
 ;
@@ -38,16 +38,14 @@ BITS 64
 
 align   32
 
-GLOBAL_FUNC mpn_addsub_n
-
-%define USE_LINUX64 1
+GLOBAL_FUNC mpn_sumdiff_n
 
 %ifdef USE_WIN64
 
-    %define Op1     RCX
-    %define Op2     RDX
-    %define Op3     R8
-    %define Op4     R9
+    %define Op3     RCX
+    %define Op4     RDX
+    %define Op1     R8
+    %define Op2     R9
     %define Size    RBX             ; SAVE!
 
     %define Limb0   RBP             ; SAVE!
@@ -73,10 +71,10 @@ GLOBAL_FUNC mpn_addsub_n
 
 %else
 
-    %define Op1     RDI
-    %define Op2     RSI
-    %define Op3     RDX
-    %define Op4     RCX
+    %define Op3     RDI
+    %define Op4     RSI
+    %define Op1     RDX
+    %define Op2     RCX
     %define Size    R8
 
     %define Limb0   RBP             ; SAVE!
@@ -114,9 +112,7 @@ GLOBAL_FUNC mpn_addsub_n
     movq    SaveRSI, RSI
     movq    SaveRBP, RBP
     movq    SaveRBX, RBX
-  %endif
-
-  %ifdef USE_LINUX64
+  %else
     movq    SaveR15, R15
     movq    SaveR14, R14
     movq    SaveR13, R13
@@ -329,8 +325,9 @@ GLOBAL_FUNC mpn_addsub_n
     ; hand back carries
   .sumdiff_n_post:
 				; AL = -add_carry, AH = -sub_carry
-    sub     AL, AH		; AL = (-add_carry) - (-sub_carry) = sub_carry - add_carry
-    neg     AL			; AL = add_carry - sub_carry
+    neg     AL   		; AL = add_carry, AH = -sub_carry
+    add     AH, AH		; AL = add_carry, CY = sub_carry
+    adc     AL, AL		; AL = 2*add_carry + sub_carry
     movsx   RAX, AL
 
   .Exit:
@@ -346,9 +343,7 @@ GLOBAL_FUNC mpn_addsub_n
     mov     R14, [RSP]
     mov     R15, [RSP+8]
     add     RSP, 16
-  %endif
-
-  %ifdef USE_LINUX64
+  %else
     movq    R15, SaveR15
     movq    R14, SaveR14
     movq    R13, SaveR13
