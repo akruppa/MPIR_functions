@@ -13,14 +13,14 @@
 ;  along with the MPIR Library; see the file COPYING.LIB.  If not, write
 ;  to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 ;  Boston, MA 02110-1301, USA.
-; sumdiff_n( Op3, Op4, Op1, Op2: pLimb Size: tCounter; ):tBaseVal;
-; Linux      RDI  RSI  RDX  RCX        R8          :RAX
-; Win7       RCX  RDX  R8   R9         Stack       :RAX
+; mp_limb_t mpn_sumdiff_n(mp_ptr Op3, mp_ptr Op4, mp_srcptr Op1, mp_srcptr Op2, mp_size_t Size)
+; Linux     RAX           RDI         RSI         RDX            RCX            R8
+; Win7      RAX           RCX         RDX         R8             R9             Stack
 ;
 ; Description:
 ; The function adds Op2 to Op1 and stores the result in Op3 while at the same
 ; time subtracting Op2 from Op1 with result in Op4. The final carries from
-; addition and subtraction are handed back as a combined tBaseVal. There is a
+; addition and subtraction are handed back as a combined mp_limb_t. There is a
 ; gain in execution speed compared to separate addition and subtraction by
 ; reducing memory access. The factor depends on the size of the operands (the
 ; cache hierarchy in which the operands can be handled).
@@ -33,12 +33,6 @@
 ; ============================================================================
 
 %include 'yasm_mac.inc'
-
-BITS 64
-
-align   32
-
-GLOBAL_FUNC mpn_sumdiff_n
 
 %ifdef USE_WIN64
 
@@ -98,13 +92,19 @@ GLOBAL_FUNC mpn_sumdiff_n
     %define SaveR14 XMM4
     %define SaveR15 XMM5
 
-    %define SaveAC  setc    AL
-    %define LoadAC  shr     AL, 1
-
-    %define SaveSC  sbb     AH, AH
-    %define LoadSC  add     AH, AH
 %endif
 
+%define SaveAC  setc    AL
+%define LoadAC  shr     AL, 1
+
+%define SaveSC  sbb     AH, AH
+%define LoadSC  add     AH, AH
+
+BITS 64
+
+align   32
+
+   GLOBAL_FUNC mpn_sumdiff_n
 
   %ifdef USE_WIN64
     sub     RSP, 16
