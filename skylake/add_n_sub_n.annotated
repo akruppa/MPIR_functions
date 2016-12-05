@@ -98,11 +98,11 @@ GLOBAL_FUNC mpn_sumdiff_n
     %define SaveR14 XMM4
     %define SaveR15 XMM5
 
-    %define SaveAC  setc    AL		; 1 1 p06
-    %define LoadAC  shr     AL, 1	; 1 1 p06
+    %define SaveAC  setc    AL
+    %define LoadAC  shr     AL, 1
 
-    %define SaveSC  sbb     AH, AH	; 1 1 p06
-    %define LoadSC  add     AH, AH	; 1 1 p0156
+    %define SaveSC  sbb     AH, AH
+    %define LoadSC  add     AH, AH
 %endif
 
 
