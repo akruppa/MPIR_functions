@@ -40,7 +40,7 @@ do
       fi
       for I in 1 2 3
       do
-        TIMES[$I]="`~/ajs-jev $CPUBIND -m 1 -l "$L" -d "$ALIGNMENT" "$@" | grep "# original sequence" | cut -d " " -f 4 | cut -d . -f 1`" || exit 1
+        TIMES[$I]="`ajs-jev $CPUBIND -m 1 -l "$L" -d "$ALIGNMENT" "$@" | grep "# original sequence" | cut -d " " -f 4 | cut -d . -f 1`" || exit 1
       done
       # Sort the timings into increasing order
       if [ "${TIMES[1]}" -gt "${TIMES[2]}" ]; then T="${TIMES[1]}"; TIMES[1]="${TIMES[2]}"; TIMES[2]="$T"; fi
