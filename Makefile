@@ -17,4 +17,7 @@ all: lCmp.o lCpyDec.o lCpyInc.o lShl1Equ.o lShlEqu.o lShr1Equ.o lShrEqu.o lShl1E
 %.timing: %.as %.sig
 	../timing.sh -s `cat $*.sig` -i $< > $@
 
+%.timing: %.s %.sig
+	../timing.sh -s `cat $*.sig` $< > $@
+
 timing: $(TIMINGS)
