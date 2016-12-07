@@ -1,5 +1,5 @@
 ; ============================================================================
-; addlsh1_n( Op1, Op2, Op3: pLimb; Size: tCounter ):tBaseVal
+; addlsh1_n( Op3, Op2, Op1: pLimb; Size: tCounter ):tBaseVal
 ; Linux      RDI  RSI  RDX         RCX             :RAX
 ; Win7       RCX  RDX  R8          R9              :RAX
 ;
@@ -56,13 +56,11 @@ segment .text
     %define SaveR13 XMM4
     %define SaveR14 XMM5
 
-%endif
+%else
 
-%ifdef USE_LINUX64
-
-    %define Op1     RDI
+    %define Op3     RDI
     %define Op2     RSI
-    %define Op3     RDX
+    %define Op1     RDX
     %define Size    RCX
   %ifdef USE_PREFETCH
     %define Offs    RBP         ; SAVE!
