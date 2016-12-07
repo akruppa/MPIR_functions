@@ -170,7 +170,7 @@ addlsh1_n:
   .addlsh1_n_four:
 
     test    Size, 4
-    je      .addlsh1_n_test
+    je      .addlsh1_n_test #ajs:notshortform
 
     mov     Limb1, [Op1]
     mov     Limb2, [Op1+8]
@@ -200,7 +200,7 @@ addlsh1_n:
     add     Op2, 32
     add     Op3, 32
     mov     Limb0, Limb4
-    jmp     .addlsh1_n_test
+    jmp     .addlsh1_n_test #ajs:notshortform
 
     ; main loop
     ; - 2.40-2.50 cycles per limb in L1D$
