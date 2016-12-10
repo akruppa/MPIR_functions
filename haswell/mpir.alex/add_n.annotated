@@ -32,15 +32,16 @@
     %define Inp1P   rsi
     %define Inp2P   rdx
     %define Size    rcx
-    %define LIMB1   r9
-    %define LIMB2   r10
+    %define LIMB1   rax
+    %define LIMB2   r9
+    %define SizeRest r10
 %endif
 
     BITS    64
 
    GLOBAL_FUNC mpn_add_n
-	mov     rax, Size
-	and     rax, 7
+	mov     SizeRest, Size
+	and     SizeRest, 7
 	shr     Size, 3
 	cmp     Size, 0
 ;	carry flag is clear here
@@ -81,34 +82,35 @@
 
 	dec     Size
 	jnz     .loop1
-	inc     rax
-	dec     rax
+	inc     SizeRest
+	dec     SizeRest
 	jz      .end
 .rest:
 	mov     LIMB1, [Inp1P]
 	adc     LIMB1, [Inp2P]
 	mov     [SumP], LIMB1
-	dec     rax
+	dec     SizeRest
 	jz      .end
 	mov     LIMB1, [Inp1P+8]
 	adc     LIMB1, [Inp2P+8]
 	mov     [SumP+8], LIMB1
-	dec     rax
+	dec     SizeRest
 	jz      .end
 	mov     LIMB1, [Inp1P+16]
 	adc     LIMB1, [Inp2P+16]
 	mov     [SumP+16], LIMB1
-	dec     rax
+	dec     SizeRest
         jz      .end
 	mov     LIMB1, [Inp1P+24]
 	adc     LIMB1, [Inp2P+24]
 	mov     [SumP+24], LIMB1
-	dec     rax
+	dec     SizeRest
         jz      .end
         lea     Inp1P, [Inp1P+32]
         lea     Inp2P, [Inp2P+32]
         lea     SumP, [SumP+32]
         jmp     .rest
 .end:
-	adc     rax, rax
+	mov     eax, 0
+	adc     eax, eax
 	ret
