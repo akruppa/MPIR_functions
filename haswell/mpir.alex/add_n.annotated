@@ -53,33 +53,30 @@
 	mov     LIMB1, [Inp1P]
 	mov     LIMB2, [Inp1P+8]
 	adc     LIMB1, [Inp2P]
-	adc     LIMB2, [Inp2P+8]
 	mov     [SumP], LIMB1
-	mov     [SumP+8], LIMB2
+	adc     LIMB2, [Inp2P+8]
 	mov     LIMB1, [Inp1P+16]
-	mov     LIMB2, [Inp1P+24]
+	mov     [SumP+8], LIMB2
 	adc     LIMB1, [Inp2P+16]
-	adc     LIMB2, [Inp2P+24]
+	mov     LIMB2, [Inp1P+24]
 	mov     [SumP+16], LIMB1
-	mov     [SumP+24], LIMB2
-
 	mov     LIMB1, [Inp1P+32]
-	mov     LIMB2, [Inp1P+40]
+	adc     LIMB2, [Inp2P+24]
+	mov     [SumP+24], LIMB2
 	adc     LIMB1, [Inp2P+32]
-	adc     LIMB2, [Inp2P+40]
 	mov     [SumP+32], LIMB1
+	mov     LIMB2, [Inp1P+40]
+	adc     LIMB2, [Inp2P+40]
 	mov     [SumP+40], LIMB2
 	mov     LIMB1, [Inp1P+48]
 	mov     LIMB2, [Inp1P+56]
+	lea     Inp1P, [Inp1P+64]
 	adc     LIMB1, [Inp2P+48]
 	adc     LIMB2, [Inp2P+56]
+	lea     Inp2P, [Inp2P+64]
 	mov     [SumP+48], LIMB1
 	mov     [SumP+56], LIMB2
-
-	lea     Inp1P, [Inp1P+64]
-	lea     Inp2P, [Inp2P+64]
 	lea     SumP, [SumP+64]
-
 	dec     Size
 	jnz     .loop1
 	inc     SizeRest
