@@ -1,5 +1,5 @@
 
-;  AMD64 mpn_add_n, mpn_add_nc
+;  AMD64 mpn_sub_n, mpn_sub_nc
 ;  Copyright 2008, 2016 Jason Moxham and Alexander Kruppa
 ;  This file is part of the MPIR Library.
 ;  The MPIR Library is free software; you can redistribute it and/or modify
@@ -39,23 +39,23 @@
     %define SizeRest r9
 %endif
 
-%define ADCSBB adc
+%define ADCSBB sbb
 
     BITS    64
 
 	align   16
-   GLOBAL_FUNC mpn_add_nc
+   GLOBAL_FUNC mpn_sub_nc
 	mov     SizeRest, Size
 	and     SizeRest, 7
 	shr     Size, 3
         neg	CarryIn		; Set CF iff CarryIn != 0
 	inc     Size
 	dec     Size		; Set ZF without affecting CF
-	jnz     mpn_add_n.loop1
-        jmp     mpn_add_n.rest #ajs:notshortform
+	jnz     mpn_sub_n.loop1
+        jmp     mpn_sub_n.rest #ajs:notshortform
 
 	align   16
-   GLOBAL_FUNC mpn_add_n
+   GLOBAL_FUNC mpn_sub_n
 	mov     SizeRest, Size
 	and     SizeRest, 7
 	shr     Size, 3
