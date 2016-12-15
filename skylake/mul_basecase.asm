@@ -150,7 +150,7 @@
 
 	lea	r10, [rel .Lmtab]
 %ifdef PIC
-	movsl	r11, [r10+rax*4]
+	movsxd	r11, DWORD [r10+rax*4]
 	lea	r10, [r11+r10]
 	jmp	r10
 %else
@@ -245,7 +245,7 @@
 
 	lea	r10, [rel .Latab]
 %ifdef PIC
-	movsl	rax, [r10+rax*4]
+	movsxd	rax, DWORD [r10+rax*4]
 	lea	jaddr, [rax+r10]
 %else
 	mov	jaddr, [r10+rax*8]
@@ -349,7 +349,7 @@
 	mulx 	w1, w0, [up]
 	jmp	.Lam1top
 
-	section data
+	section .data
 	align 8
 %ifdef PIC
 .Lmtab:	
@@ -390,5 +390,4 @@
 	DQ	.Lf6
 	DQ	.Lf7
 %endif
-	__SECT__
-
+	section .text
