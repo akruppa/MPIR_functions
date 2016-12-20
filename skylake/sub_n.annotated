@@ -1,5 +1,5 @@
 
-;  AMD64 mpn_add_n
+;  AMD64 mpn_sub_n
 ;  Copyright 2016 Alexander Kruppa
 ;  This file is part of the MPIR Library.
 ;  The MPIR Library is free software; you can redistribute it and/or modify
@@ -37,8 +37,8 @@
     %define LIMB2   r8
 %endif
 
-%define ADDSUB add
-%define ADCSBB adc
+%define ADDSUB sub
+%define ADCSBB sbb
 
 ; Skylake has problems sustaining 2 read and 1 write per clock cycle.
 ; It sometimes gets into a "mode" (for the lack of a better word) where
@@ -65,7 +65,7 @@
 
     BITS    64
 
-   GLOBAL_FUNC mpn_add_n
+   GLOBAL_FUNC mpn_sub_n
 ; Make dest 16-bytes aligned
 	test	SumP, 8
 	jz	.aligned
