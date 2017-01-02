@@ -63,6 +63,8 @@
 
 %include 'yasm_mac.inc'
 
+BITS 64
+
 %define TP rsi
 ; LP covers blocks A, B
 %define RP rdi
@@ -145,6 +147,12 @@ align 16
 	mov [HP + rcx*8 + 24], r15	; C[i+3] = B[i+3] + C[i+3] + D[i+3] - F[i+3]
 	add rcx,4
 	jnc .Lp
+; Bits of rbx contain carries of
+; 0		1	2
+; (B+C+D)-F	(B+C)+D	B+C
+; Bits of rax contain carries of
+; 0		1
+; (B+C+A)-E	(B+C)+A
 cmp rcx,2
 jg	.Lcase0
 jz	.Lcase1
