@@ -146,15 +146,7 @@ align 16
 	add rcx,4
 	jnc .Lp
 
-; Previously,
-; Bits of rbx contain carries of
-; 0		1	2
-; (B+C+D)-F	(B+C)+D	B+C
-; Bits of rax contain carries of
-; 0		1
-; (B+C+A)-E	(B+C)+A
-
-; Now bits of eax contain carries of:
+; Bits of eax contain carries of:
 ; 0		1		2	3	4
 ; (B+C+D)-F	(B+C+A)-E	(B+C)+D	(B+C)+A	B+C
 
@@ -267,10 +259,8 @@ jp	.Lcase2
 .Lskipload:
 	mov r11, rdx
 	xor r8, r8
-; was	bt rax, 1 ; carry of (B+C)+A
 	bt eax, 3 ; carry of (B+C)+A
 	adc r8, r8
-; was	bt rbx, 2 ; carry of B+C
 	bt eax, 4 ; carry of B+C
 	adc r8,0
 	add [LP + rdx*8], r8
@@ -279,10 +269,8 @@ jp	.Lcase2
 	jc .L2
 	; the two carrys from 3rd to 4th
 	xor r8, r8
-; was	bt rbx, 1 ; carry of (B+C)+D
 	bt eax, 2 ; carry of (B+C)+D
 	adc r8, r8
-; was	bt rbx, 2 ; carry of B+C
 	bt eax, 4 ; carry of B+C
 	adc r8,0
 	add [HP + rcx*8], r8
@@ -291,14 +279,12 @@ jp	.Lcase2
 	jc .L3
 	; now the borrow from 2nd to 3rd
 	mov rdx, r11
-; was	bt rax, 0 ; carry of (B+C+A)-E
 	bt eax, 1 ; carry of (B+C+A)-E
 .L1:	sbb qword [LP + rdx*8], 0
 	lea rdx, [rdx + 1]
 	jc .L1
 	; borrow from 3rd to 4th
 	mov rcx,3
-; was	bt rbx, 0 ; carry of (B+C+D)-F
 	bt eax, 0 ; carry of (B+C+D)-F
 .L4:	sbb qword [HP + rcx*8], 0
 	lea rcx, [rcx + 1]
