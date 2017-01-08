@@ -105,8 +105,9 @@ sub rax, 3*8
 mov [rsp-8], rax			; for testing end of main loop
 ; eax contains the carrys
 xor eax, eax
+mov r11, rax
 align 16
-.Lp:	bt eax, 4
+.Lp:	bt r11, 3
 	mov r8, [B_P]		; r8 = B[i]
 	adc r8, [C_P]		; r8 = B[i] + C[i]
 	mov r9, [B_P + 8]	; r9 = B[i+1]
@@ -115,8 +116,9 @@ align 16
 	adc r10, [C_P + 16]	; r10 = B[i+2] + C[i+2]
 	mov r11, [B_P + 24]	; r11 = B[i+3]
 	adc r11, [C_P + 24]	; r11 = B[i+3] + C[i+3]
+	mov r12, rax
 	adc eax, eax
-	bt eax, 4
+	bt r12, 3
 	mov r12, r8		; r12 = B[i] + C[i]
 	mov r13, r9		; r13 = B[i+1] + C[i+1]
 	mov r14, r10		; r14 = B[i+2] + C[i+2]
@@ -126,13 +128,13 @@ align 16
 	adc r10, [A_P + 16]	; r10 = B[i+2] + C[i+2] + A[i+2]
 	adc r11, [A_P + 24]	; r11 = B[i+3] + C[i+3] + A[i+3]
 	adc eax, eax
-	bt eax, 4
+	bt eax, 4	; FIXME
 	adc r12, [D_P]		; r12 = B[i] + C[i] + D[i]
 	adc r13, [D_P + 8]	; r13 = B[i+1] + C[i+1] + D[i+1]
 	adc r14, [D_P + 16]	; r14 = B[i+2] + C[i+2] + D[i+2]
 	adc r15, [D_P + 24]	; r15 = B[i+3] + C[i+3] + D[i+3]
 	adc eax, eax
-	bt eax, 4
+	bt eax, 4	; FIXME
 	sbb r8, [E_P]		; r8 = B[i] + C[i] + A[i] - E[i]
 	sbb r9, [E_P + 8]	; r9 = B[i+1] + C[i+1] + A[i+1] - E[i+1]
 	sbb r10, [E_P + 16]	; r10 = B[i+2] + C[i+2] + A[i+2] - E[i+2]
@@ -141,12 +143,14 @@ align 16
 	mov [B_P + 8], r9	; B[i+1] = B[i+1] + C[i+1] + A[i+1] - E[i+1]
 	mov [B_P + 16], r10	; B[i+2] = B[i+2] + C[i+2] + A[i+2] - E[i+2]
 	mov [B_P + 24], r11	; B[i+3] = B[i+3] + C[i+3] + A[i+3] - E[i+3]
+	mov r11, rax
 	adc eax, eax
-	bt eax, 4
+	bt r11, 3
 	sbb r12, [F_P]		; r12 = B[i] + C[i] + D[i] - F[i]
 	sbb r13, [F_P + 8]	; r13 = B[i+1] + C[i+1] + D[i+1] - F[i+1]
 	sbb r14, [F_P + 16]	; r14 = B[i+2] + C[i+2] + D[i+2] - F[i+2]
 	sbb r15, [F_P + 24]	; r15 = B[i+3] + C[i+3] + D[i+3] - F[i+3]
+	mov r11, rax
 	adc eax, eax
 	mov [C_P], r12		; C[i] = B[i] + C[i] + D[i] - F[i]
 	mov [C_P + 8], r13	; C[i+1] = B[i+1] + C[i+1] + D[i+1] - F[i+1]
@@ -158,8 +162,8 @@ align 16
 	lea D_P, [D_P + 4*8]
 	lea E_P, [E_P + 4*8]
 	lea F_P, [F_P + 4*8]
-	mov r8, A_P
-	sub r8, [rsp-8]		; r8 = A_P - (orig_B_P - 3*8) = A_P - orig_B_P + 24
+	mov r9, A_P
+	sub r9, [rsp-8]		; r9 = A_P - (orig_B_P - 3*8) = A_P - orig_B_P + 24
 	jc .Lp			; If A_P < orig_B_P - 3*8, then do another 4 words
 
 ; Bits of eax contain carries of:
@@ -168,41 +172,45 @@ align 16
 
 	jz .Lcase3		; If A_P = orig_B_P - 3*8, then do remaining 3 words
 				; Difference is 8, 16, or 24, corresponding to 2, 1, or 0 words left to do, resp.
-	cmp r8, 16
-	jb	.Lcase2		# ajs:notshortform ; r8 = 8 : 2 words
-	je	.Lcase1		# ajs:notshortform ; r8 = 16 : 1 word
-	jmp	.Lcase0		# ajs:notshortform ; r8 = 24 : 0 words
+	cmp r9, 16
+	jb	.Lcase2		# ajs:notshortform ; r9 = 8 : 2 words
+	je	.Lcase1		# ajs:notshortform ; r9 = 16 : 1 word
+	jmp	.Lcase0		# ajs:notshortform ; r9 = 24 : 0 words
 .Lcase3:
-	bt eax, 4
+	bt r11, 3
 	mov r8, [B_P]
 	adc r8, [C_P]
 	mov r9, [B_P + 8]
 	adc r9, [C_P + 8]
 	mov r10, [B_P + 16]
 	adc r10, [C_P + 16]
+	mov r11, rax
 	adc eax, eax
-	bt eax, 4
+	bt r11, 3
 	mov r12, r8
 	mov r13, r9
 	mov r14, r10
 	adc r8, [A_P]
 	adc r9, [A_P + 8]
 	adc r10, [A_P + 16]
+	mov r11, rax
 	adc eax, eax
-	bt eax, 4
+	bt r11, 3
 	adc r12, [D_P]
 	adc r13, [D_P + 8]
 	adc r14, [D_P + 16]
+	mov r11, rax
 	adc eax, eax
-	bt eax, 4
+	bt r11, 3
 	sbb r8, [E_P]
 	sbb r9, [E_P + 8]
 	sbb r10, [E_P + 16]
-	adc eax, eax
-	bt eax, 4
 	mov [B_P], r8
 	mov [B_P + 8], r9
 	mov [B_P + 16], r10
+	mov r11, rax
+	adc eax, eax
+	bt r11, 3
 	sbb r12, [F_P]
 	sbb r13, [F_P + 8]
 	sbb r14, [F_P + 16]
@@ -218,27 +226,31 @@ align 16
 	lea F_P, [F_P + 3*8]
 	jmp .Lfin		# ajs:notshortform
 .Lcase2:
-	bt eax, 4
+	bt r11, 3
 	mov r8, [B_P]
 	adc r8, [C_P]
 	mov r9, [B_P + 8]
 	adc r9, [C_P + 8]
+	mov r11, rax
 	adc eax, eax
+	bt r11, 3
 	mov r12, r8
 	mov r13, r9
-	bt eax, 4
 	adc r8, [A_P]
 	adc r9, [A_P + 8]
+	mov r11, rax
 	adc eax, eax
-	bt eax, 4
+	bt r11, 3
 	adc r12, [D_P]
 	adc r13, [D_P + 8]
+	mov r11, rax
 	adc eax, eax
-	bt eax, 4
+	bt r11, 3
 	sbb r8, [E_P]
 	sbb r9, [E_P + 8]
+	mov r11, rax
 	adc eax, eax
-	bt eax, 4
+	bt r11, 3
 	mov [B_P], r8
 	mov [B_P + 8], r9
 	sbb r12, [F_P]
@@ -254,21 +266,25 @@ align 16
 	lea F_P, [F_P + 2*8]
 	jmp .Lfin
 .Lcase1:
-	bt eax, 4
+	bt r11, 3
 	mov r8, [B_P]
 	adc r8, [C_P]
+	mov r11, rax
+	adc eax, eax
+	bt r11, 3
 	mov r12, r8
-	adc eax, eax
-	bt eax, 4
 	adc r8, [A_P]
+	mov r11, rax
 	adc eax, eax
-	bt eax, 4
+	bt r11, 3
 	adc r12, [D_P]
+	mov r11, rax
 	adc eax, eax
-	bt eax, 4
+	bt r11, 3
 	sbb r8, [E_P]
+	mov r11, rax
 	adc eax, eax
-	bt eax, 4
+	bt r11, 3
 	mov [B_P], r8
 	sbb r12, [F_P]
 	adc eax, eax
