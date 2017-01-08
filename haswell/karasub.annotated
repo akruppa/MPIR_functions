@@ -51,6 +51,14 @@
 ;       |                  |
 ;       --------------------
 ;
+; Let n2 = floor(n/2), n3 = n - n2, i.e., either n3 = n2 or n3 = n2 + 1.
+; The sizes of the blocks are: {rp, 2*n2} = xl.yl, {rp + 2*n2, 2*n3} = xh.yh,
+; {tp, 2*n3} = (xh - xl).(yh - yl).
+; We arrange sizes so that A, B, C, and E are of length n2, and D and F
+; are of length 2*n3-n2. I.e.,
+; A = {rp, n2}, B = {rp + n2, n2}, C = {rp + 2*n2, n2}
+; D = {rp + 3*n2, 2*n3-n2}, E = {tp, n2}, F = {tp + n2, 2*n3-n2}.
+;
 ; To avoid overwriting B before it is used, we need to do two operations
 ; in parallel:
 ;
@@ -85,21 +93,17 @@ push r14
 push r15
 push rdx
 ; n is rdx and put it on the stack
-and rdx, -1			; rdx = 2*floor(n/2)
-shl rdx, 2			; rdx = 8*floor(n/2)
-; eax contains the carrys
-; A_P = RP
-; B_P = RP + (n/2)*8
-; C_P = RP + 2*(n/2)*8
-; D_P = RP + 3*(n/2)*8
-; E_P = TP
-; F_P = TP + (n/2)*8
+and rdx, -2			; rdx = 2*n2
+shl rdx, 2			; rdx = 8*n2
 lea B_P, [RP + rdx]
 lea C_P, [RP + rdx*2]
-lea F_P, [RP + rdx]
-lea D_P, [RP + rdx*2 + rdx]	; overwrites rdx
-lea rax, [B_P - 3*8]
-mov [rsp], rax			; for testing end of main loop
+lea F_P, [E_P + rdx]
+lea rdx, [rdx*2 + rdx]
+lea D_P, [RP + rdx]
+mov rax, B_P
+sub rax, 3*8
+mov [rsp-8], rax			; for testing end of main loop
+; eax contains the carrys
 xor eax, eax
 align 16
 .Lp:	bt eax, 4
@@ -154,22 +158,21 @@ align 16
 	lea D_P, [D_P + 4*8]
 	lea E_P, [E_P + 4*8]
 	lea F_P, [F_P + 4*8]
-	cmp A_P, [rsp]
-	jc .Lp
+	mov r8, A_P
+	sub r8, [rsp-8]		; r8 = A_P - (orig_B_P - 3*8) = A_P - orig_B_P + 24
+	jc .Lp			; If A_P < orig_B_P - 3*8, then do another 4 words
 
 ; Bits of eax contain carries of:
 ; 0		1		2	3	4
 ; (B+C+D)-F	(B+C+A)-E	(B+C)+D	(B+C)+A	B+C
 
-	mov r8, [rsp]		; FIXME: improve this
-	add r8, 3*8		; original value of B_P
-	sub r8, B_P
-	shr r8, 3
-	cmp r8, 2
-	jg	.Lcase0
-	jz	.Lcase1
-	jp	.Lcase2
-.Lcase3:	;rcx=0
+	jz .Lcase3		; If A_P = orig_B_P - 3*8, then do remaining 3 words
+				; Difference is 8, 16, or 24, corresponding to 2, 1, or 0 words left to do, resp.
+	cmp r8, 16
+	jb	.Lcase2		# ajs:notshortform ; r8 = 8 : 2 words
+	je	.Lcase1		# ajs:notshortform ; r8 = 16 : 1 word
+	jmp	.Lcase0		# ajs:notshortform ; r8 = 24 : 0 words
+.Lcase3:
 	bt eax, 4
 	mov r8, [B_P]
 	adc r8, [C_P]
@@ -213,7 +216,7 @@ align 16
 	lea D_P, [D_P + 3*8]
 	lea E_P, [E_P + 3*8]
 	lea F_P, [F_P + 3*8]
-	jmp .Lfin
+	jmp .Lfin		# ajs:notshortform
 .Lcase2:
 	bt eax, 4
 	mov r8, [B_P]
@@ -241,7 +244,6 @@ align 16
 	sbb r12, [F_P]
 	sbb r13, [F_P + 8]
 	adc eax, eax
-	add rdx,2
 	mov [C_P], r12
 	mov [C_P + 8], r13
 	lea A_P, [A_P + 2*8]
@@ -258,7 +260,7 @@ align 16
 	mov r12, r8
 	adc eax, eax
 	bt eax, 4
-	adc r8, [A_P + 16]
+	adc r8, [A_P]
 	adc eax, eax
 	bt eax, 4
 	adc r12, [D_P]
@@ -278,42 +280,45 @@ align 16
 	lea E_P, [E_P + 1*8]
 	lea F_P, [F_P + 1*8]
 .Lfin:
+	; Now A_P, ..., F_P point at A[n2]=B[0], B[n2]=C[0], C[n2]=D[0],
+        ; D[n2], E[n2]=F[0], F[n2], resp.
 .Lcase0:
-	; store top two words of H as carrys could change them
+	; store top two words of D as carrys could change them
 	pop r15
 	bt r15, 0
 	jnc .Lskipload
-	mov r12, [D_P FIXME: what is correct offset here]
-        mov r13, [D_P + 8 FIXME]
+	mov r12, [D_P]		; load D[n2]
+        mov r13, [D_P + 8]	; load D[n2 + 1]
 	; the two carrys from 2nd to 3rd
 .Lskipload:
 	xor r8, r8
-	bt eax, 4 ; carry of B+C
+	mov r11, r8		; r11 is constant 0 now
+	bt eax, 4		; carry of B+C
 	adc r8, r8
 	mov r9, r8
-	bt eax, 3 ; carry of (B+C)+A
-	mov r10, B_P
-	adc [B_P], r8
-.L2:	adc qword [r10 + 8], 0
+	bt eax, 3		; carry of (B+C)+A
+	lea r10, [B_P + 8]
+	adc [B_P], r8		; B_P points at B[n2] = C[0]
+.L2:	adc qword [r10], r11
 	lea r10, [r10 + 8]
 	jc .L2
 	; the two carrys from 3rd to 4th
-	bt eax, 2 ; carry of (B+C)+D
-	mov r10, C_P
+	lea r10, [C_P + 8]
+	bt eax, 2		; carry of (B+C)+D
 	adc [C_P], r9
-.L3:	adc qword [r10 + 8], 0
+.L3:	adc qword [r10], r11
 	lea r10, [r10 + 8]
 	jc .L3
 	; now the borrow from 2nd to 3rd
 	mov r10, B_P
-	bt eax, 1 ; carry of (B+C+A)-E
-.L1:	sbb qword [r10], 0
+	bt eax, 1		; borrow of (B+C+A)-E
+.L1:	sbb qword [r10], r11
 	lea r10, [r10 + 8]
 	jc .L1
 	; borrow from 3rd to 4th
-	bt eax, 0 ; carry of (B+C+D)-F
+	bt eax, 0		; borrow of (B+C+D)-F
 	mov r10, C_P
-.L4:	sbb qword [r10], 0
+.L4:	sbb qword [r10], r11
 	lea r10, [r10 + 8]
 	jc .L4
 
@@ -321,13 +326,13 @@ align 16
 	bt r15, 0
 	jnc .Lnotodd
 
-	sub r12, [F_P]
-	sbb r13, [F_P + 8]
+	sub r12, [F_P]		; r12 contains D[n2]
+	sbb r13, [F_P + 8]	; r13 contains D[n2+1]
 	sbb rax, rax
 	add [C_P], r12
 	adc [C_P + 8], r13
 	adc rax, 0		; rax is -1, 0, or 1
-.L7:	add [C_P], rax
+.L7:	add [C_P + 16], rax
 	adc rax, 0
 	lea C_P, [C_P + 8]
 	sar rax, 1
