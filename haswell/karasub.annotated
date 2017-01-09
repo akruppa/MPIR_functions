@@ -118,6 +118,7 @@ align 16
 	adc r11, [C_P + 24]	; r11 = B[i+3] + C[i+3]
 	mov r12, rax
 	adc eax, eax
+
 	bt r12, 3
 	mov r12, r8		; r12 = B[i] + C[i]
 	mov r13, r9		; r13 = B[i+1] + C[i+1]
@@ -128,13 +129,8 @@ align 16
 	adc r10, [A_P + 16]	; r10 = B[i+2] + C[i+2] + A[i+2]
 	adc r11, [A_P + 24]	; r11 = B[i+3] + C[i+3] + A[i+3]
 	adc eax, eax
-	bt eax, 4	; FIXME
-	adc r12, [D_P]		; r12 = B[i] + C[i] + D[i]
-	adc r13, [D_P + 8]	; r13 = B[i+1] + C[i+1] + D[i+1]
-	adc r14, [D_P + 16]	; r14 = B[i+2] + C[i+2] + D[i+2]
-	adc r15, [D_P + 24]	; r15 = B[i+3] + C[i+3] + D[i+3]
-	adc eax, eax
-	bt eax, 4	; FIXME
+
+	bt eax, 4	; FIXME: can we break the dependency chain here?
 	sbb r8, [E_P]		; r8 = B[i] + C[i] + A[i] - E[i]
 	sbb r9, [E_P + 8]	; r9 = B[i+1] + C[i+1] + A[i+1] - E[i+1]
 	sbb r10, [E_P + 16]	; r10 = B[i+2] + C[i+2] + A[i+2] - E[i+2]
@@ -145,6 +141,15 @@ align 16
 	mov [B_P + 24], r11	; B[i+3] = B[i+3] + C[i+3] + A[i+3] - E[i+3]
 	mov r11, rax
 	adc eax, eax
+
+	bt r11, 3
+	adc r12, [D_P]		; r12 = B[i] + C[i] + D[i]
+	adc r13, [D_P + 8]	; r13 = B[i+1] + C[i+1] + D[i+1]
+	adc r14, [D_P + 16]	; r14 = B[i+2] + C[i+2] + D[i+2]
+	adc r15, [D_P + 24]	; r15 = B[i+3] + C[i+3] + D[i+3]
+	mov r11, rax
+	adc eax, eax
+
 	bt r11, 3
 	sbb r12, [F_P]		; r12 = B[i] + C[i] + D[i] - F[i]
 	sbb r13, [F_P + 8]	; r13 = B[i+1] + C[i+1] + D[i+1] - F[i+1]
@@ -152,6 +157,7 @@ align 16
 	sbb r15, [F_P + 24]	; r15 = B[i+3] + C[i+3] + D[i+3] - F[i+3]
 	mov r11, rax
 	adc eax, eax
+
 	mov [C_P], r12		; C[i] = B[i] + C[i] + D[i] - F[i]
 	mov [C_P + 8], r13	; C[i+1] = B[i+1] + C[i+1] + D[i+1] - F[i+1]
 	mov [C_P + 16], r14	; C[i+2] = B[i+2] + C[i+2] + D[i+2] - F[i+2]
@@ -168,7 +174,7 @@ align 16
 
 ; Bits of eax contain carries of:
 ; 0		1		2	3	4
-; (B+C+D)-F	(B+C+A)-E	(B+C)+D	(B+C)+A	B+C
+; (B+C+D)-F	(B+C)+D	(B+C+A)-E	(B+C)+A	B+C
 
 	jz .Lcase3		; If A_P = orig_B_P - 3*8, then do remaining 3 words
 				; Difference is 8, 16, or 24, corresponding to 2, 1, or 0 words left to do, resp.
@@ -196,18 +202,18 @@ align 16
 	mov r11, rax
 	adc eax, eax
 	bt r11, 3
-	adc r12, [D_P]
-	adc r13, [D_P + 8]
-	adc r14, [D_P + 16]
-	mov r11, rax
-	adc eax, eax
-	bt r11, 3
 	sbb r8, [E_P]
 	sbb r9, [E_P + 8]
 	sbb r10, [E_P + 16]
 	mov [B_P], r8
 	mov [B_P + 8], r9
 	mov [B_P + 16], r10
+	mov r11, rax
+	adc eax, eax
+	bt r11, 3
+	adc r12, [D_P]
+	adc r13, [D_P + 8]
+	adc r14, [D_P + 16]
 	mov r11, rax
 	adc eax, eax
 	bt r11, 3
@@ -241,13 +247,13 @@ align 16
 	mov r11, rax
 	adc eax, eax
 	bt r11, 3
-	adc r12, [D_P]
-	adc r13, [D_P + 8]
+	sbb r8, [E_P]
+	sbb r9, [E_P + 8]
 	mov r11, rax
 	adc eax, eax
 	bt r11, 3
-	sbb r8, [E_P]
-	sbb r9, [E_P + 8]
+	adc r12, [D_P]
+	adc r13, [D_P + 8]
 	mov r11, rax
 	adc eax, eax
 	bt r11, 3
@@ -277,11 +283,11 @@ align 16
 	mov r11, rax
 	adc eax, eax
 	bt r11, 3
-	adc r12, [D_P]
+	sbb r8, [E_P]
 	mov r11, rax
 	adc eax, eax
 	bt r11, 3
-	sbb r8, [E_P]
+	adc r12, [D_P]
 	mov r11, rax
 	adc eax, eax
 	bt r11, 3
@@ -320,14 +326,14 @@ align 16
 	jc .L2
 	; the two carrys from 3rd to 4th
 	lea r10, [C_P + 8]
-	bt eax, 2		; carry of (B+C)+D
+	bt eax, 1		; carry of (B+C)+D
 	adc [C_P], r9
 .L3:	adc qword [r10], r11
 	lea r10, [r10 + 8]
 	jc .L3
 	; now the borrow from 2nd to 3rd
 	mov r10, B_P
-	bt eax, 1		; borrow of (B+C+A)-E
+	bt eax, 2		; borrow of (B+C+A)-E
 .L1:	sbb qword [r10], r11
 	lea r10, [r10 + 8]
 	jc .L1
