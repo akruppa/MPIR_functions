@@ -1,0 +1,72 @@
+; carry flag contains the carry from the addition of the low word of the product
+; overflow flag contains the carry from the addition of the high word of the product
+
+%include 'yasm_mac.inc'
+
+%ifdef USE_WIN64
+    %define RP      rcx
+    %define Inp1P   rdx
+    %define Size    r8
+    %define Inp2    r9
+    %define acc_0
+    %define acc_1   
+    %define prod_lo
+    %define prod_hi
+%else
+    %define RP      rdi
+    %define Inp1P   rsi
+    %define Size    rdx
+    %define Inp2    rcx
+    %define acc_0   rax
+    %define acc_1   r8
+    %define prod_lo r9
+    %define prod_hi r10
+%endif
+
+BITS    64
+
+align 32
+GLOBAL_FUNC mpn_addmul_1
+
+%ifdef USE_WIN64
+%else
+	xchg	rdx, rcx	; We want the multiplier in rdx and the loop count in rcx
+    %undef Size
+    %undef Inp2
+%endif
+	mov	acc_1, rcx
+	xor	rax, rax
+	shr	rcx, 1
+	shl	rcx, 1
+	inc	rcx
+	test	acc_1, 1	; shr sets overflow flag to MSB(input) which
+				; will be 0 in practice but is not specified
+				; to be 0 unconditionally. test always sets
+				; both carry and overflow to 0.
+	jz	.loop_test
+
+	mulx	prod_hi, rax, [Inp1P]
+	adox	rax, [RP]
+	mov	[RP], rax
+	mov	rax, prod_hi
+	lea	Inp1P, [Inp1P + 8]
+	lea	RP, [RP + 8]
+	jmp	.loop_test
+
+align 16
+.loop:
+	mulx	prod_hi, prod_lo, [Inp1P]
+	adox    rax, [RP]
+	adcx    rax, prod_lo
+	mov	[RP], rax
+
+	mov	rax, prod_hi
+	lea	Inp1P, [Inp1P + 8]
+	lea	RP, [RP + 8]
+.loop_test:
+	loop	.loop		; Does not affect flags
+
+	mov	prod_lo, 0
+	adcx    rax, prod_lo
+	adox    rax, prod_lo
+	ret
