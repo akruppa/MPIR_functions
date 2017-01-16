@@ -104,13 +104,13 @@ GLOBAL_FUNC mpn_mul_1
   .Loop:
 
     mov     [RP], MulLo0
-    mulx    MulHi0, MulLo0, [S1P]
     mov     [RP+8], MulLo1
-    mulx    MulHi1, MulLo1, [S1P+8]
     mov     [RP+16], MulLo2
+    mov     [RP+24], MulLo3
+    mulx    MulHi0, MulLo0, [S1P]
+    mulx    MulHi1, MulLo1, [S1P+8]
     mulx    MulHi2, MulLo2, [S1P+16]
     add     MulLo0, MulHi3
-    mov     [RP+24], MulLo3
     mulx    MulHi3, MulLo3, [S1P+24]
     adc     MulLo1, MulHi0
     adc     MulLo2, MulHi1
